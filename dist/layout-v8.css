@@ -1,0 +1,46 @@
+/* Final narrow-screen overrides kept separate so embedded previews cannot reuse an older stylesheet transform. */
+@media (max-height: 650px) {
+  .note-evidence-copy {
+    top: 34%;
+  }
+
+  .judgment-panel {
+    overflow: visible;
+  }
+
+  .judgment-note,
+  .judgment-phone {
+    max-height: 32%;
+  }
+
+  .judgment-feedback {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    left: 0;
+    margin: 0;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  }
+}
+
+body.preview-320x568 .note-evidence-copy {
+  top: 34%;
+}
+
+body.preview-320x568 .judgment-panel {
+  overflow: visible;
+}
+
+body.preview-320x568 .judgment-note,
+body.preview-320x568 .judgment-phone {
+  max-height: 32%;
+}
+
+body.preview-320x568 .judgment-feedback {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  left: 0;
+  margin: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}

@@ -1,0 +1,159 @@
+/* v9: preserve the 750×1624 artwork while adapting it to shorter/wider phones. */
+.game,
+.phone-shell {
+  overflow: clip;
+}
+
+.scene-backdrop {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: #172020 url("./assets/02-store-closing-broken-freezer.webp") center / cover no-repeat;
+  filter: brightness(0.42) saturate(0.62);
+}
+
+.scene-image {
+  z-index: 1;
+  background: transparent;
+}
+
+.scene-shade {
+  z-index: 2;
+}
+
+.sound-gate {
+  background:
+    linear-gradient(180deg, rgba(12, 18, 18, 0.05), rgba(12, 17, 16, 0.2) 48%, rgba(11, 15, 14, 0.84)),
+    url("./assets/02-store-closing-broken-freezer.webp") center 44% / cover no-repeat,
+    #151d1d;
+}
+
+/* The enlarged note and the answer sheet occupy separate vertical bands. */
+.note-evidence-copy {
+  top: 48%;
+  left: 25%;
+  width: 50%;
+  gap: 3px;
+  padding: 9px 11px;
+}
+
+.judgment-note {
+  max-height: none;
+  padding: 14px;
+}
+
+.judgment-note h2 {
+  margin-bottom: 8px;
+}
+
+.official-check-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.official-check-row {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 10px;
+  border: 1px solid #dfe2e1;
+  border-radius: 11px;
+  background: #fff;
+  font-family: "Microsoft YaHei", sans-serif;
+}
+
+.official-check-row span {
+  display: grid;
+  gap: 2px;
+}
+
+.official-check-row small,
+.compact-fee small {
+  color: #7b8588;
+  font-size: 9px;
+}
+
+.official-check-row strong {
+  color: #26333c;
+  font-size: 12px;
+}
+
+.official-check-row b {
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #29483e;
+  background: rgba(66, 116, 91, 0.14);
+  font-size: 9px;
+}
+
+.compact-fee {
+  gap: 3px;
+  padding: 10px;
+}
+
+.compact-fee strong {
+  font-size: 15px;
+}
+
+.compact-service {
+  padding: 10px;
+}
+
+.compact-service p {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-height: 650px) {
+  .note-evidence-copy,
+  body.preview-320x568 .note-evidence-copy {
+    top: 35%;
+    width: 48%;
+  }
+
+  .judgment-note,
+  body.preview-320x568 .judgment-note {
+    max-height: none;
+    padding: 11px;
+  }
+
+  .judgment-note .choice-kicker {
+    margin-bottom: 2px;
+    font-size: 10px;
+  }
+
+  .judgment-note h2 {
+    margin-bottom: 6px;
+    font-size: 17px;
+  }
+
+  .judgment-note .judgment-options {
+    gap: 6px;
+  }
+
+  .phone-focus.phone-official {
+    top: 64px;
+    height: 54%;
+  }
+
+  .official-check-stack {
+    gap: 6px;
+  }
+
+  .official-check-row {
+    min-height: 44px;
+    padding: 7px 9px;
+  }
+
+  .compact-fee,
+  .compact-service {
+    padding: 8px;
+  }
+
+  .compact-service p {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+}
