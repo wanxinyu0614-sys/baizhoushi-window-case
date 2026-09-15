@@ -49,6 +49,8 @@ const state = {
   currentLine: null,
   timers: new Set(),
   resumeOpening: false,
+  narrationToken: 0,
+  narrationBusy: false,
 };
 
 const PACE = {
@@ -80,6 +82,7 @@ const speakerProfiles = {
 };
 
 let sharedVoice = null;
+let voicesReadyPromise = null;
 
 function asset(name) {
   return `${ASSET_ROOT}${name}?v=${ASSET_VERSION}`;
@@ -115,28 +118,73 @@ function setPhase(phase) {
 
 function chooseSharedVoice() {
   const voices = window.speechSynthesis?.getVoices?.() || [];
-  const chinese = voices.filter((voice) => /^zh/i.test(voice.lang));
-  const pool = chinese.length ? chinese : voices;
-  const preferred = ["Ting-Ting", "Tingting", "Meijia", "Google 普通话", "Xiaoxiao", "Huihui", "Chinese China"];
-  sharedVoice = preferred
+  const chineseVoices = voices.filter((voice) => /^zh/i.test(voice.lang));
+  const pool = chineseVoices.length ? chineseVoices : voices;
+
+  // 优先使用音色更沉稳、温和的中文女声；不再用音高变声模拟年龄。
+  const preferredNames = [
+    "Meijia",
+    "HsiaoChen",
+    "Hsiao-Chen",
+    "Ting-Ting",
+    "Tingting",
+    "Huihui",
+    "Google 普通话",
+    "Chinese China",
+  ];
+
+  sharedVoice = preferredNames
     .map((name) => pool.find((voice) => voice.name.includes(name)))
     .find(Boolean) || pool[0] || null;
 }
 
+function prepareVoice() {
+  if (!window.speechSynthesis) return Promise.resolve();
+  chooseSharedVoice();
+  if (sharedVoice) return Promise.resolve();
+  if (voicesReadyPromise) return voicesReadyPromise;
+
+  voicesReadyPromise = new Promise((resolve) => {
+    const finish = () => {
+      chooseSharedVoice();
+      resolve();
+    };
+    window.speechSynthesis.addEventListener?.("voiceschanged", finish, { once: true });
+    window.setTimeout(finish, 700);
+  });
+  return voicesReadyPromise;
+}
+
 function stopNarration() {
+  state.narrationToken += 1;
+  state.narrationBusy = false;
   window.speechSynthesis?.cancel?.();
 }
 
-function speakLine(speaker, text) {
+function speakLine(speaker, text, { onEnd } = {}) {
   state.currentLine = { speaker, text };
-  if (!state.audioEnabled || document.hidden || !window.speechSynthesis) return;
+  if (!state.audioEnabled || document.hidden || !window.speechSynthesis) {
+    onEnd?.();
+    return;
+  }
+
   stopNarration();
+  const token = state.narrationToken;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "zh-CN";
   utterance.voice = sharedVoice;
   utterance.volume = 1;
-  utterance.rate = 0.92;
+  utterance.rate = 0.9;
   utterance.pitch = 1;
+  state.narrationBusy = true;
+
+  const finish = () => {
+    if (token !== state.narrationToken) return;
+    state.narrationBusy = false;
+    onEnd?.();
+  };
+  utterance.onend = finish;
+  utterance.onerror = finish;
   window.speechSynthesis.speak(utterance);
 }
 
@@ -200,10 +248,26 @@ function dialogue(speaker, text, extra = "") {
 }
 
 function afterDialogue(ms, fn) {
-  schedule(() => {
+  const startedAt = Date.now();
+
+  const finishWhenVoiceEnds = () => {
+    const voiceStillPlaying = state.audioEnabled && (
+      state.narrationBusy ||
+      window.speechSynthesis?.speaking ||
+      window.speechSynthesis?.pending
+    );
+
+    // 语音读完后再换字幕和画面；浏览器异常时最多多等 12 秒。
+    if (voiceStillPlaying && Date.now() - startedAt < ms + 12000) {
+      schedule(finishWhenVoiceEnds, 120);
+      return;
+    }
+
     $$(".dialogue", sceneUi).forEach((panel) => panel.classList.add("is-exiting"));
     schedule(fn, PACE.dialogueExit);
-  }, Math.max(0, ms - PACE.dialogueExit));
+  };
+
+  schedule(finishWhenVoiceEnds, Math.max(0, ms - PACE.dialogueExit));
 }
 
 function playOpening(index = 0) {
@@ -645,6 +709,7 @@ function startCase(withAudio) {
   if (state.introStarted) return;
   state.introStarted = true;
   state.audioEnabled = withAudio;
+  if (withAudio) prepareVoice();
   syncSoundToggle();
   soundToggle.hidden = false;
   soundGate.classList.add("is-leaving");

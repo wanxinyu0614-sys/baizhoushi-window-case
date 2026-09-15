@@ -21,8 +21,3 @@
 ## 本地查看
 
 用任意静态文件服务器打开 `dist/` 目录即可。入口为 `dist/index.html`。
-
-## GitHub Pages
-
-仓库已包含 GitHub Pages 自动部署流程。推送到 `main` 后，工作流会直接发布
-`dist/` 中的静态页面，无需额外构建。
