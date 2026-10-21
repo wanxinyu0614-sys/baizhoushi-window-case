@@ -1,5 +1,6 @@
 const project = '.';
 const local = './assets';
+const media = source => `${source}?v=20261021-mobile1`;
 const seriesMode = new URLSearchParams(location.search).get('series') === '1';
 const demoMode = new URLSearchParams(location.search).get('series') === 'demo';
 if (seriesMode || demoMode) document.title = '奶奶侦探 · 第二关｜手机自己去赶集';
@@ -24,21 +25,21 @@ const image = {
   k12: `${local}/K12-验证码最后一道门-大特写.jpg`,
 };
 const scenes = [
-  { type: 'clip', label: '手机异动', source: `${local}/V01-修复版.mp4`, progress: '1/4' },
-  { type: 'clip', label: '先别碰', source: `${local}/V02-新台词成片.mp4`, progress: '1/4', cue: '周姐！我要不要点停它？', replyCue: '别碰。', replyAt: 2.58, cueEnd: 3.65 },
+  { type: 'clip', label: '手机异动', source: media(`${local}/V01-修复版.mp4`), progress: '1/4' },
+  { type: 'clip', label: '先别碰', source: media(`${local}/V02-新台词成片.mp4`), progress: '1/4', cue: '周姐！我要不要点停它？', replyCue: '别碰。', replyAt: 2.58, cueEnd: 3.65 },
   { type: 'question', id: 'first' },
-  { type: 'clip', label: '追问', source: `${project}/视频/v3.mp4`, progress: '2/4' },
-  { type: 'clip', label: '半小时前', source: `${project}/视频/v4.mp4`, progress: '2/4', context: '半小时前 · 免费贴膜摊' },
-  { type: 'clip', label: '贴膜摊', source: `${project}/视频/v5.mp4`, progress: '2/4' },
+  { type: 'clip', label: '追问', source: media(`${project}/视频/v3.mp4`), progress: '2/4' },
+  { type: 'clip', label: '半小时前', source: media(`${project}/视频/v4.mp4`), progress: '2/4', context: '半小时前 · 免费贴膜摊' },
+  { type: 'clip', label: '贴膜摊', source: media(`${project}/视频/v5.mp4`), progress: '2/4' },
   { type: 'question', id: 'permission' },
-  { type: 'clip', label: '推理手账', source: `${project}/视频/v6.mp4`, progress: '3/4' },
+  { type: 'clip', label: '推理手账', source: media(`${project}/视频/v6.mp4`), progress: '3/4' },
   { type: 'still', label: '手账特写', source: image.k10, duration: 950, progress: '3/4' },
   { type: 'question', id: 'deduce' },
-  { type: 'clip', label: '验证码危机', source: `${project}/视频/v7.mp4`, progress: '4/4', context: '断网前 · 陈阿姨的回忆', stopInsert: true },
+  { type: 'clip', label: '验证码危机', source: media(`${project}/视频/v7.mp4`), progress: '4/4', context: '断网前 · 陈阿姨的回忆', stopInsert: true },
   { type: 'question', id: 'code' },
-  { type: 'clip', label: '官方核实', source: `${project}/视频/v8.mp4`, progress: '4/4' },
+  { type: 'clip', label: '官方核实', source: media(`${project}/视频/v8.mp4`), progress: '4/4' },
   { type: 'outcome' },
-  { type: 'clip', label: '摊主不见了', source: `${project}/视频/v9.mp4`, progress: '4/4', context: '核实后 · 折返贴膜摊', contextKind: '现在' },
+  { type: 'clip', label: '摊主不见了', source: media(`${project}/视频/v9.mp4`), progress: '4/4', context: '核实后 · 折返贴膜摊', contextKind: '现在' },
   { type: 'end' },
 ];
 const questions = {
@@ -174,7 +175,19 @@ video.addEventListener('timeupdate', () => {
     cue.textContent = video.currentTime >= step.replyAt ? step.replyCue : step.cue;
   }
 });
-video.addEventListener('error', () => showToast('这段视频加载失败，请检查本地素材服务。'));
+video.addEventListener('error', () => {
+  if (ui.querySelector('#clip-retry')) return;
+  ui.insertAdjacentHTML('beforeend', '<section class="panel dialogue clip-recovery"><p>网络有点慢，这段剧情暂时没加载出来。</p><button class="primary" id="clip-retry" type="button">重新加载</button><button class="minor" id="clip-skip" type="button">跳过这段，继续调查</button></section>');
+  ui.querySelector('#clip-retry').onclick = () => {
+    ui.querySelector('.clip-recovery')?.remove();
+    video.load();
+    video.play().catch(() => showToast('请再点一次播放'));
+  };
+  ui.querySelector('#clip-skip').onclick = () => {
+    ui.querySelector('.clip-recovery')?.remove();
+    next();
+  };
+});
 insert.src = image.k12;
 const preview = new URLSearchParams(location.search).get('preview');
 if (preview === 'official') {

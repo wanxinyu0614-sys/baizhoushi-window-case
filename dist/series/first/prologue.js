@@ -36,16 +36,12 @@ class CasePrologue {
  }
  async start({sound=false}={}){
   this.cancel();this.active=true;this.notified=false;this.sound=Boolean(sound);const epoch=this.renew();this.remember(true);this.host.hidden=false;this.setPhase('loading');
-  this.host.innerHTML=`<div class="opening-stage"><div class="opening-cover" aria-hidden="true"><span>第一关</span><strong>窗外有事</strong></div><video class="opening-video" src="assets/video/V01.mp4" preload="auto" playsinline muted hidden aria-label="周奶奶在家中介绍自己并转身望向窗外"></video><img class="opening-fallback" src="assets/intro-grandma-front-monocular.png" alt="面向玩家的周奶奶" hidden></div><div class="opening-shade" aria-hidden="true"></div><div class="opening-tools"><button class="icon-button" data-opening="sound" aria-label="${this.sound?'关闭':'开启'}周奶奶配音" aria-pressed="${this.sound}">${this.icons(this.sound?'sound':'muted')}</button><button class="opening-skip" data-opening="skip">跳过介绍</button></div><section class="panel opening-card opening-start"><h1>窗外有事</h1><p>周奶奶想跟你说几句话。</p><button class="primary" data-opening="start">播放开场视频</button><small>约 8 秒，播放后自动进入案件</small></section><p class="opening-caption" aria-live="off" hidden></p><section class="opening-complete" hidden></section><div class="opening-loading" role="status">正在准备开场…</div><section class="opening-error panel" hidden><p>开场视频暂时没能加载，可以使用静帧继续。</p><button class="primary" data-opening="retry">重新加载</button><button class="minor" data-opening="skip">用图文继续</button></section><div class="opening-chapter" hidden><span>第一关</span><strong>窗外有事</strong></div>`;
+  this.host.innerHTML=`<div class="opening-stage"><div class="opening-cover" aria-hidden="true"><span>第一关</span><strong>窗外有事</strong></div><video class="opening-video" data-src="assets/video/V01.mp4" preload="none" playsinline muted hidden aria-label="周奶奶在家中介绍自己并转身望向窗外"></video><img class="opening-fallback" src="assets/intro-grandma-front-monocular.jpg" alt="面向玩家的周奶奶"></div><div class="opening-shade" aria-hidden="true"></div><div class="opening-tools"><button class="icon-button" data-opening="sound" aria-label="${this.sound?'关闭':'开启'}周奶奶配音" aria-pressed="${this.sound}">${this.icons(this.sound?'sound':'muted')}</button><button class="opening-skip" data-opening="skip">跳过介绍</button></div><section class="panel opening-card opening-start"><h1>窗外有事</h1><p>周奶奶想跟你说几句话。</p><button class="primary" data-opening="start">播放开场视频</button><small>约 8 秒，点播放后再加载</small></section><p class="opening-caption" aria-live="off" hidden></p><section class="opening-complete" hidden></section><div class="opening-loading" role="status" hidden>正在加载视频…</div><section class="opening-error panel" hidden><p>网络有点慢，可以重试，或直接用图文继续。</p><button class="primary" data-opening="retry">重新加载</button><button class="minor" data-opening="skip">用图文继续</button></section><div class="opening-chapter" hidden><span>第一关</span><strong>窗外有事</strong></div>`;
   this.video=this.host.querySelector('.opening-video');
+  this.video.dataset.src+='?v=20261021-mobile1';
   this.video.addEventListener('timeupdate',()=>{if(this.phase==='playing')this.setCaption(this.video.currentTime)});
   this.video.addEventListener('ended',()=>{this.videoEnded=true;if(this.phase==='playing')this.complete()});
-  try{
-   const ready=(media,event,minimum)=>new Promise((resolve,reject)=>{if(media.readyState>=minimum)return resolve();media.addEventListener(event,resolve,{once:true});media.addEventListener('error',reject,{once:true})});
-   await Promise.race([ready(this.video,'loadeddata',2),new Promise((_,reject)=>setTimeout(reject,7000))]);
-  }catch{if(this.current(epoch))this.useFallback()}
-  if(!this.current(epoch)||this.phase==='error')return;
-  this.host.querySelector('.opening-loading').hidden=true;this.setPhase('ready');
+  if(this.current(epoch))this.setPhase('ready');
  }
  useFallback(){
   this.pauseMedia();this.video.hidden=true;this.host.querySelector('.opening-cover').hidden=true;this.host.querySelector('.opening-fallback').hidden=false;this.host.querySelector('.opening-loading').hidden=true;this.host.querySelector('.opening-error').hidden=false;this.host.querySelector('.opening-start').hidden=true;this.setPhase('error');
@@ -53,8 +49,14 @@ class CasePrologue {
  async playOpening(){
   const epoch=this.epoch;this.host.querySelector('.opening-start').hidden=true;this.host.querySelector('.opening-caption').hidden=false;
   this.setSound(this.ensureSound());this.videoEnded=false;this.video.pause();this.video.playbackRate=1;this.video.currentTime=0;this.setCaption(0);
-  this.host.querySelector('.opening-cover').hidden=true;this.host.querySelector('.opening-shade').hidden=true;this.video.hidden=false;this.setPhase('playing');
-  try{await this.video.play()}catch{if(this.current(epoch))this.useFallback()}
+  const loading=this.host.querySelector('.opening-loading');loading.hidden=false;
+  if(!this.video.src){this.video.src=this.video.dataset.src;this.video.load()}
+  this.setPhase('loading');
+  try{
+   await Promise.race([this.video.play(),new Promise((_,reject)=>setTimeout(()=>reject(Error('timeout')),20000))]);
+   if(!this.current(epoch))return;
+   loading.hidden=true;this.host.querySelector('.opening-cover').hidden=true;this.host.querySelector('.opening-shade').hidden=true;this.host.querySelector('.opening-fallback').hidden=true;this.video.hidden=false;this.setPhase('playing');
+  }catch{if(this.current(epoch))this.useFallback()}
  }
  complete(){
   if(!this.active||this.phase==='complete')return;this.pauseMedia();this.setPhase('complete');

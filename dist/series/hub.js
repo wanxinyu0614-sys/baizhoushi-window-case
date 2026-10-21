@@ -1,5 +1,5 @@
 const SERIES_KEY = 'grandma-detective-series-v1';
-const secondUrl = './second/index.html?series=1';
+const secondUrl = './second/index.html?series=1&v=20261021-mobile1';
 function readProgress() {
   try {
     const value = JSON.parse(localStorage.getItem(SERIES_KEY));
@@ -27,7 +27,7 @@ function showProgress() {
     firstState.textContent = '已通关';
     firstState.classList.add('done');
     firstLink.textContent = '重玩第一关 →';
-    firstLink.href = './first/index.html?series=1&restart=1';
+    firstLink.href = './first/index.html?series=1&restart=1&v=20261021-mobile1';
     secondCard.classList.remove('locked');
     secondState.textContent = progress.level2 ? '已通关' : '已解锁';
     secondState.classList.add('done');
@@ -37,7 +37,7 @@ function showProgress() {
   } else {
     firstState.textContent = '待调查';
     firstState.classList.remove('done');
-    firstLink.href = './first/index.html?series=1&restart=1';
+    firstLink.href = './first/index.html?series=1&restart=1&v=20261021-mobile1';
     firstLink.innerHTML = '开始第一关 <span aria-hidden="true">→</span>';
     secondCard.classList.add('locked');
     secondState.textContent = '待解锁';

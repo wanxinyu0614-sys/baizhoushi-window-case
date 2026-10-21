@@ -12,7 +12,7 @@ function markSeriesComplete(){
  try{const prior=JSON.parse(localStorage.getItem(SERIES_KEY))||{};localStorage.setItem(SERIES_KEY,JSON.stringify({...prior,level1:true}))}catch{try{localStorage.setItem(SERIES_KEY,JSON.stringify({level1:true}))}catch{}}
 }
 const art=id=>'assets/'+id+'.jpg';
-const video=id=>'assets/video/'+id;
+const video=id=>'assets/video/'+id+'?v=20261021-mobile1';
 const AUDIO_BUILD='20260921l';
 const STORY_VOICES={
  intro:[{speaker:'周奶奶',role:'grandma',id:'narration-intro',text:'晚上二十二点十七分，白昼街的小店里，何叔收到一条消息。'}],
@@ -118,8 +118,8 @@ async function render({transition='cut',focus=null}={}){
  const my=++token;busy=true;game.classList.add('busy');clean();
  const imageId=currentDetail?'03':SHOTS[state.stage][0],useLoop=state.stage==='observe'&&!currentDetail;let media,loopFallback=false;
  if(useLoop){
-  media=document.createElement('video');media.src=video('L01.mp4');media.poster=art('03');media.preload='auto';media.loop=true;media.muted=true;media.playsInline=true;media.setAttribute('aria-label','何叔店内的三条可调查线索循环画面');
-  try{await Promise.race([new Promise((resolve,reject)=>{if(media.readyState>=2)return resolve();media.addEventListener('loadeddata',resolve,{once:true});media.addEventListener('error',reject,{once:true});media.load()}),new Promise((_,reject)=>setTimeout(reject,7000))])}catch{media=new Image();media.src=art('03');try{await media.decode()}catch{}loopFallback=true}
+  media=document.createElement('video');media.src=video('L01.mp4');media.poster=art('03');media.preload='metadata';media.loop=true;media.muted=true;media.playsInline=true;media.setAttribute('aria-label','何叔店内的三条可调查线索循环画面');
+  try{await Promise.race([new Promise((resolve,reject)=>{if(media.readyState>=2)return resolve();media.addEventListener('loadeddata',resolve,{once:true});media.addEventListener('error',reject,{once:true});media.load()}),new Promise((_,reject)=>setTimeout(reject,15000))])}catch{media=new Image();media.src=art('03');try{await media.decode()}catch{}loopFallback=true}
  }else{media=new Image();media.src=art(imageId);try{await media.decode()}catch{if(my!==token)return;busy=false;game.classList.remove('busy');modal('这张图片暂时没能读到。进度保留，可以重试当前画面。',button('重新加载图片','retry-image')+'<button class="minor" data-action="restart">从头再玩</button>');return}}
  if(my!==token)return;
  const old=document.createElement('div');old.className='old-frame';if(scene.firstChild){old.innerHTML=scene.innerHTML;const prevPhoto=old.querySelector('.scene-photo'),currentPhoto=scene.querySelector('.scene-photo');if(prevPhoto&&currentPhoto)prevPhoto.style.transform=getComputedStyle(currentPhoto).transform;scene.querySelector('video')?.pause();const oldUI=ui.cloneNode(true);oldUI.removeAttribute('id');Object.assign(oldUI.style,{position:'absolute',inset:'0',display:'flex',flexDirection:'column',padding:'20px 13px 19px',gap:'12px'});old.appendChild(oldUI)}
