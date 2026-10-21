@@ -164,7 +164,6 @@ async function render({transition='cut',focus=null}={}){
  cover.replaceChildren(old);media.className='scene-photo'+(useLoop&&!loopFallback?' scene-video':'');if(media instanceof HTMLImageElement)media.alt=currentDetail?'调查现场':SHOTS[state.stage][1];scene.replaceChildren(media);scene.insertAdjacentHTML('beforeend','<div class="shade"></div>');if(media instanceof HTMLVideoElement&&!reduced)media.play().catch(()=>{});game.dataset.stage=state.stage;game.classList.toggle('has-evidence',Boolean(currentDetail)||(state.stage==='verify'&&state.verified));
  game.classList.toggle('indoor',!['intro','message','observe'].includes(state.stage));
  ui.innerHTML=currentDetail?detailHTML():header(SHOTS[state.stage][1])+storyHTML();
- if(state.stage==='lower'&&!currentDetail)ui.querySelector('.decision-panel').before(voiceCaption);
  if(state.stage==='observe'&&!currentDetail)installObserve();else if(['intro','message'].includes(state.stage))effects.innerHTML='<div class="rain"></div>';
  document.querySelector('#debug').textContent=currentDetail?`${DATA[currentDetail.id].title} · ${currentDetail.mode}`:useLoop&&!loopFallback?'调查循环 · 5s':SHOTS[state.stage][1];
  const duration=transition==='none'?0:transition==='iris'?650:transition==='travel'?650:transition==='focus'?480:360;
@@ -191,8 +190,8 @@ async function action(a){
  if(a==='close-modal'){game.querySelector('dialog')?.close();game.querySelector('dialog')?.remove();scheduleAutoAdvance();return}
  if(busy)return;
  switch(a){
- case'next-level':location.assign('../second/index.html?series=1&v=20261021-polish1');return;
- case'series-map':location.assign('../index.html?v=20261021-polish1');return;
+ case'next-level':location.assign('../second/index.html?series=1&v=20261021-caption-bottom1');return;
+ case'series-map':location.assign('../index.html?v=20261021-caption-bottom1');return;
  case'restart':game.querySelector('dialog')?.remove();state=F.fresh();playedVoiceSignatures.clear();try{localStorage.removeItem(KEY)}catch{}await startPrologue();return;
  case'retry-image':game.querySelector('dialog')?.remove();await render();return;
  case'skip-intro':await go('raise');toast('何叔正准备提前关店去转账。先调查现场三处线索。');return;

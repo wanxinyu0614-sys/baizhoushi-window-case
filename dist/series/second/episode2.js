@@ -8,7 +8,7 @@ function markSeriesComplete() {
   if (!seriesMode) return;
   try { const prior = JSON.parse(localStorage.getItem(seriesKey)) || {}; if (prior.level1 === true) localStorage.setItem(seriesKey, JSON.stringify({ ...prior, level2: true })); } catch {}
 }
-function returnToSeries() { location.assign('../index.html?v=20261021-polish1'); }
+function returnToSeries() { location.assign('../index.html?v=20261021-caption-bottom1'); }
 const video = document.querySelector('#clip');
 const still = document.querySelector('#still');
 const insert = document.querySelector('#stop-insert');
