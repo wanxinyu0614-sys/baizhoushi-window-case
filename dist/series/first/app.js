@@ -185,7 +185,7 @@ async function action(a){
  if(busy)return;
  switch(a){
  case'next-level':location.assign('../second/index.html?series=1&v=20261021-playback2');return;
- case'series-map':location.assign('../index.html');return;
+ case'series-map':location.assign('../index.html?v=20261021-playback2');return;
  case'restart':game.querySelector('dialog')?.remove();state=F.fresh();playedVoiceSignatures.clear();try{localStorage.removeItem(KEY)}catch{}await startPrologue();return;
  case'retry-image':game.querySelector('dialog')?.remove();await render();return;
  case'skip-intro':await go('raise');toast('何叔正准备提前关店去转账。先调查现场三处线索。');return;
