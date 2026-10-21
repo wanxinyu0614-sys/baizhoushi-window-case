@@ -28,20 +28,11 @@ function readProgress() {
 }
 function showProgress() {
   const progress = readProgress();
-  const count = Number(progress.level1) + Number(progress.level2);
-  document.querySelector('#progress-count').textContent = `${count} / 2 关`;
-  document.querySelector('#progress-fill').style.width = `${count * 50}%`;
-  document.querySelector('#progress-message').textContent = count === 2
-    ? '两件事都查明白了。停手、脱离控制、走原渠道核实。'
-    : progress.level1 ? '第一关已结案。第二关已解锁，去查陈阿姨的手机。'
-    : '先从第一关开始，帮何叔停下可疑转账。';
-
   const firstState = document.querySelector('#level-one-state');
   const firstLink = document.querySelector('#level-one-link');
   const secondCard = document.querySelector('#level-two');
   const secondState = document.querySelector('#level-two-state');
   const secondLink = document.querySelector('#level-two-link');
-  document.querySelector('#reset-progress').hidden = count === 0;
   if (progress.level1) {
     firstState.textContent = '已通关';
     firstState.classList.add('done');
@@ -66,10 +57,6 @@ function showProgress() {
     secondLink.innerHTML = '通关第一关后解锁 <span aria-hidden="true">⌁</span>';
   }
 }
-document.querySelector('#reset-progress').addEventListener('click', () => {
-  try { localStorage.removeItem(SERIES_KEY); } catch {}
-  showProgress();
-});
 document.querySelector('#level-two-link').addEventListener('click', event => {
   if (event.currentTarget.getAttribute('aria-disabled') === 'true') event.preventDefault();
 });
