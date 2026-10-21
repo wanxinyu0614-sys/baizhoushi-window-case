@@ -4,6 +4,8 @@
 #game #voice-caption[data-speaker]:before{content:attr(data-speaker);position:absolute;top:-12px;left:10px;min-width:44px;padding:3px 9px;border-radius:7px 7px 7px 2px;color:#fff9e7;font-size:10px;font-weight:600;line-height:1.35;text-align:center;letter-spacing:.04em;box-shadow:0 2px 6px #0005;background:#557451}
 #game #voice-caption[data-role="grandma"]:before{background:#3f746c}
 #game #voice-caption:is([data-role="stranger"],[data-role="vendor"]):before{background:#a9513d}
-#game[data-stage="lower"] #voice-caption{bottom:312px}
+#game[data-stage="lower"] #ui{overflow-y:auto}
+#game[data-stage="lower"] #ui>.spacer{min-height:16px}
+#game[data-stage="lower"] #voice-caption{position:relative;inset:auto;flex:none;margin:0 6%;pointer-events:none}
 #game[data-stage="verify"] #voice-caption{bottom:24px}
-@media(max-height:700px){#game #voice-caption{font-size:13px}#game[data-stage="lower"] #voice-caption{bottom:260px}}
+@media(max-height:700px){#game #voice-caption{font-size:13px}}

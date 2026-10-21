@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><title>Decision layout regression fixture</title>
+<style>html,body,iframe{margin:0;border:0;width:100%;height:100%;display:block}</style>
+<iframe title="第一关倒计时布局回归检查"></iframe>
+<script src="../dist/series/first/flow.js"></script>
+<script>
+// Test-only origin: boot the real page directly at the reported decision state.
+localStorage.setItem('window-case-motion-v4',JSON.stringify({...CaseFlow.fresh(),stage:'lower',completed:['shutter','account','phone']}));
+document.querySelector('iframe').src='../dist/series/first/index.html?v=20261021-layout1';
+</script>

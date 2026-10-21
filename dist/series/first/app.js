@@ -152,7 +152,7 @@ function scheduleAutoAdvance(delayOverride=null){
  const stage=state.stage,delay=delayOverride??(state.stage==='verify'?3000:reduced?Math.min(next[1],900):next[1]);autoTimer=setTimeout(()=>{if(!busy&&!currentDetail&&state.stage===stage&&!game.querySelector('dialog'))action(next[0])},delay);
 }
 async function render({transition='cut',focus=null}={}){
- const my=++token;busy=true;game.classList.add('busy');clean();
+ const my=++token;busy=true;game.classList.add('busy');clean();game.append(voiceCaption);
  const imageId=currentDetail?'03':SHOTS[state.stage][0],useLoop=state.stage==='observe'&&!currentDetail;let media,loopFallback=false;
  if(useLoop){
   media=document.createElement('video');media.poster=art('03');media.preload='auto';media.loop=true;media.muted=true;media.playsInline=true;media.setAttribute('aria-label','何叔店内的三条可调查线索循环画面');
@@ -164,6 +164,7 @@ async function render({transition='cut',focus=null}={}){
  cover.replaceChildren(old);media.className='scene-photo'+(useLoop&&!loopFallback?' scene-video':'');if(media instanceof HTMLImageElement)media.alt=currentDetail?'调查现场':SHOTS[state.stage][1];scene.replaceChildren(media);scene.insertAdjacentHTML('beforeend','<div class="shade"></div>');if(media instanceof HTMLVideoElement&&!reduced)media.play().catch(()=>{});game.dataset.stage=state.stage;game.classList.toggle('has-evidence',Boolean(currentDetail)||(state.stage==='verify'&&state.verified));
  game.classList.toggle('indoor',!['intro','message','observe'].includes(state.stage));
  ui.innerHTML=currentDetail?detailHTML():header(SHOTS[state.stage][1])+storyHTML();
+ if(state.stage==='lower'&&!currentDetail)ui.querySelector('.decision-panel').before(voiceCaption);
  if(state.stage==='observe'&&!currentDetail)installObserve();else if(['intro','message'].includes(state.stage))effects.innerHTML='<div class="rain"></div>';
  document.querySelector('#debug').textContent=currentDetail?`${DATA[currentDetail.id].title} · ${currentDetail.mode}`:useLoop&&!loopFallback?'调查循环 · 5s':SHOTS[state.stage][1];
  const duration=transition==='none'?0:transition==='iris'?650:transition==='travel'?650:transition==='focus'?480:360;
