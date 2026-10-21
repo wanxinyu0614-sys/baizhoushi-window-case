@@ -1,0 +1,161 @@
+:root {
+  color-scheme: light;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ink: #342f23;
+  --cream: #fff6dd;
+  --paper: #f4ead0;
+  --rust: #af5729;
+  --green: #416d58;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 25%, #355443, #172820 66%);
+  color: var(--ink);
+}
+
+.phone {
+  width: 414px;
+  height: min(866px, calc(100svh - 36px));
+  min-height: 600px;
+  overflow: hidden;
+  border: 8px solid #111917;
+  border-radius: 38px;
+  background: #e8dfc5;
+  box-shadow: 0 30px 80px #07110fa8, 0 0 0 1px #65807088;
+}
+.phone-content {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #a5ad9d transparent;
+  padding: 20px 16px 20px;
+  background:
+    radial-gradient(circle at 94% 7%, #426751 0, transparent 30%),
+    linear-gradient(180deg, #243e32 0, #1b3129 68%, #1a2c25 100%);
+}
+.phone-content::-webkit-scrollbar { width: 4px; }
+.phone-content::-webkit-scrollbar-thumb { background: #a5ad9d; border-radius: 3px; }
+
+.masthead, .brand, .progress-heading, .card-top, .demo-strip, .section-heading { display: flex; align-items: center; }
+.masthead { justify-content: space-between; gap: 10px; }
+.brand { gap: 10px; color: var(--cream); }
+.brand-mark {
+  width: 44px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 2px solid #d1b476;
+  border-radius: 15px;
+  background: #f4d99e;
+  box-shadow: 0 4px 0 #12231c;
+  color: #495640;
+  font: 700 27px/1 "Songti SC", "STSong", serif;
+}
+.brand strong { display: block; font: 700 22px/1.15 "Songti SC", "STSong", serif; letter-spacing: 1px; }
+.brand small { display: block; margin-top: 4px; color: #c6d0bb; font-size: 11px; letter-spacing: 1px; }
+.demo-badge { flex: none; padding: 7px 10px; border: 1px solid #849d88; border-radius: 99px; color: #dfe9d4; font-size: 11px; }
+
+.hero { margin-top: 14px; color: var(--cream); }
+.eyebrow { margin: 0; color: #e7bc72; font-size: 12px; font-weight: 700; letter-spacing: 3px; }
+.hero h1 { margin: 6px 0 5px; font: 700 26px/1.2 "Songti SC", "STSong", serif; letter-spacing: 1px; }
+.hero h1 em { color: #f2be72; font-style: normal; }
+.lede { margin: 0; color: #d4ded0; font-size: 12px; line-height: 1.55; }
+
+.progress-card {
+  margin-top: 13px;
+  padding: 11px 15px 10px;
+  border: 2px solid #a9b7a2;
+  border-radius: 19px;
+  background: #f8f0d8;
+  box-shadow: 0 6px 0 #10231a66;
+}
+.progress-heading { justify-content: space-between; gap: 10px; }
+.progress-heading span { font-size: 13px; font-weight: 700; }
+.progress-heading strong { color: var(--rust); font-size: 21px; line-height: 1; }
+.progress-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 99px; background: #d7d8c4; }
+.progress-track > span { display: block; width: 0; height: 100%; border-radius: inherit; background: #5b9371; transition: width .3s ease; }
+.progress-card p { margin: 8px 0 0; color: #5f604e; font-size: 11px; line-height: 1.4; }
+.reset-progress { margin: 8px 0 0; padding: 0; border: 0; background: none; color: #8f542e; font: inherit; font-size: 11px; text-decoration: underline; cursor: pointer; }
+.reset-progress[hidden] { display: none; }
+
+.route { margin-top: 15px; }
+.section-heading { justify-content: space-between; gap: 8px; margin-bottom: 8px; color: var(--cream); }
+.section-heading .eyebrow { font-size: 11px; }
+.section-heading h2 { margin: 3px 0 0; font: 700 21px/1.15 "Songti SC", "STSong", serif; }
+.level-list { display: grid; gap: 8px; }
+.level-card {
+  min-height: 145px;
+  display: grid;
+  grid-template-columns: 98px minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px;
+  border: 2px solid #c9b990;
+  border-radius: 19px;
+  background: var(--cream);
+  box-shadow: 0 5px 0 #10231a77;
+}
+.card-image { width: 98px; height: 125px; display: block; object-fit: cover; border-radius: 11px; background: #7b8c78; }
+#level-one .card-image { object-position: 35% 50%; }
+#level-two .card-image { object-position: 45% 50%; }
+.card-body { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; padding: 2px 0 0; }
+.card-top { align-self: stretch; justify-content: space-between; gap: 4px; }
+.chapter { color: #a6572b; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.card-state { padding: 3px 6px; border-radius: 6px; background: #e6d5ad; color: #6c5532; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.card-state.done { background: #d5e5cd; color: #3d6646; }
+.card-body h3 { margin: 5px 0 3px; font: 700 19px/1.15 "Songti SC", "STSong", serif; white-space: nowrap; }
+.card-body p { margin: 0; color: #66604e; font-size: 11px; line-height: 1.42; }
+.card-cta {
+  width: 100%;
+  min-height: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: auto;
+  padding: 4px 10px;
+  border-radius: 9px;
+  background: var(--rust);
+  color: #fffaf0;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.card-cta:focus-visible, .demo-strip a:focus-visible, button:focus-visible { outline: 3px solid #efbf71; outline-offset: 2px; }
+.locked .card-image { filter: saturate(.48) brightness(.85); }
+.locked .card-cta { background: #d5d1bc; color: #605e51; cursor: not-allowed; }
+
+.demo-strip {
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 15px;
+  padding: 10px 11px;
+  border: 1px solid #78937e;
+  border-radius: 13px;
+  background: #ffffff12;
+  color: #f4edd7;
+}
+.demo-strip strong { font-size: 12px; }
+.demo-strip p { margin: 3px 0 0; color: #c3cebe; font-size: 10px; }
+.demo-strip a { flex: none; padding: 7px 9px; border: 1px solid #b4c3ac; border-radius: 8px; color: #f7e9bd; font-size: 11px; font-weight: 700; text-decoration: none; }
+footer { margin: 13px 0 0; color: #a2b4a5; font-size: 10px; text-align: center; }
+
+@media (max-width: 600px) {
+  body { display: block; background: #1b3027; }
+  .phone { width: 100%; min-height: 0; height: 100svh; border: 0; border-radius: 0; box-shadow: none; }
+  .phone-content { padding-top: max(18px, env(safe-area-inset-top)); padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+}
+@media (max-width: 355px) {
+  .phone-content { padding-right: 12px; padding-left: 12px; }
+  .level-card { grid-template-columns: 92px minmax(0, 1fr); }
+  .card-image { width: 92px; }
+  .card-body h3 { font-size: 17px; }
+  .card-body p { font-size: 10px; }
+}

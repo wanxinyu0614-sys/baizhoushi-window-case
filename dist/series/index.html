@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172821">
+  <title>奶奶侦探 · 双关闯关演示</title>
+  <link rel="stylesheet" href="./hub.css?v=20261020-phone2">
+</head>
+<body>
+  <main class="phone" aria-label="奶奶侦探双关闯关">
+    <div class="phone-content">
+      <header class="masthead">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">奶</span><div><strong>奶奶侦探</strong><small>白昼街案件簿</small></div></div>
+        <span class="demo-badge">双关体验</span>
+      </header>
+
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">和周奶奶一起破案</p>
+        <h1 id="page-title">街坊两件怪事，<br><em>一关一关查明白。</em></h1>
+        <p class="lede">看剧情、找线索、做判断。结案后，才会解锁下一件事。</p>
+      </section>
+
+      <section class="progress-card" aria-label="闯关进度" aria-live="polite">
+        <div class="progress-heading"><span>侦探进度</span><strong id="progress-count">0 / 2 关</strong></div>
+        <div class="progress-track" aria-label="两关闯关进度"><span id="progress-fill"></span></div>
+        <p id="progress-message">先从第一关开始，帮何叔停下可疑转账。</p>
+        <button id="reset-progress" class="reset-progress" type="button" hidden>清空进度，重新演示</button>
+      </section>
+
+      <section class="route" aria-labelledby="route-title">
+        <div class="section-heading"><span class="eyebrow">闯关路线</span><h2 id="route-title">两件事，一条侦探线</h2></div>
+        <div class="level-list">
+          <article class="level-card" id="level-one">
+            <img class="card-image" src="./first/assets/05.jpg" alt="周奶奶站在窗边，望着雨夜里的街坊小店">
+            <div class="card-body">
+              <div class="card-top"><span class="chapter">01 · 夜里</span><span class="card-state" id="level-one-state">待调查</span></div>
+              <h3>窗外有事</h3>
+              <p>何叔被催交“解冻费”。找出电话里的破绽，在转账前拦住他。</p>
+              <a class="card-cta" id="level-one-link" href="./first/index.html?series=1&restart=1">开始第一关 <span aria-hidden="true">→</span></a>
+            </div>
+          </article>
+
+          <article class="level-card locked" id="level-two">
+            <img class="card-image" src="./second/assets/K07-免费贴膜摊-远景.jpg" alt="白天街市里，陈阿姨在贴膜摊前拿着手机">
+            <div class="card-body">
+              <div class="card-top"><span class="chapter">02 · 白天</span><span class="card-state" id="level-two-state">待解锁</span></div>
+              <h3>手机自己去赶集</h3>
+              <p>贴膜后手机自己点了起来。查清来路，截停验证码。</p>
+              <a class="card-cta" id="level-two-link" href="#level-two" aria-disabled="true">通关第一关后解锁 <span aria-hidden="true">⌁</span></a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="demo-strip" aria-label="单关预览">
+        <div><strong>只想先看第二关？</strong><p>可单独预览，不计入闯关进度。</p></div>
+        <a id="preview-two" href="./second/index.html?series=demo" aria-label="单独预览第二关">预览 ↗</a>
+      </section>
+      <footer>可玩演示 · 进度保存在当前浏览器</footer>
+    </div>
+  </main>
+  <script src="./hub.js?v=20261020-phone1"></script>
+</body>
+</html>
