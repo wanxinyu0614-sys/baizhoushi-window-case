@@ -12,7 +12,13 @@ function markSeriesComplete(){
  try{const prior=JSON.parse(localStorage.getItem(SERIES_KEY))||{};localStorage.setItem(SERIES_KEY,JSON.stringify({...prior,level1:true}))}catch{try{localStorage.setItem(SERIES_KEY,JSON.stringify({level1:true}))}catch{}}
 }
 const art=id=>'assets/'+id+'.jpg';
-const video=id=>'assets/video/'+id+'?v=20261021-mobile1';
+const MEDIA_BUILD='20261021-hqpreload1';
+const video=id=>'assets/video/'+id+'?v='+MEDIA_BUILD;
+let loopVideoWarmup=null;
+function warmLoopVideo(){
+ if(loopVideoWarmup||navigator.connection?.saveData)return;
+ loopVideoWarmup=fetch(video('L01.mp4'),{cache:'force-cache'}).then(response=>response.ok?response.arrayBuffer():Promise.reject()).catch(()=>null);
+}
 const AUDIO_BUILD='20260921l';
 const STORY_VOICES={
  intro:[{speaker:'周奶奶',role:'grandma',id:'narration-intro',text:'晚上二十二点十七分，白昼街的小店里，何叔收到一条消息。'}],
@@ -187,7 +193,7 @@ const prologue=new CasePrologue({host:document.querySelector('#prologue'),isRedu
  onShopVisible:()=>beep('message'),
  toggleSound:()=>{sound=!sound;return sound},
  ensureSound:()=>{sound=true;return sound},
- onPhase:phase=>{if(phase!=='idle')document.querySelector('#debug').textContent=({loading:'开场 · 准备视频',ready:'V01 · 等待播放',playing:'V01 · 周奶奶自我介绍',complete:'V01 · 播放完成',entering:'进入第一关',chapter:'第一关 · 窗外有事',error:'开场 · 静帧回退'})[phase]||phase}
+ onPhase:phase=>{if(phase==='playing')warmLoopVideo();if(phase!=='idle')document.querySelector('#debug').textContent=({loading:'开场 · 准备视频',ready:'V01 · 等待播放',playing:'V01 · 周奶奶自我介绍',complete:'V01 · 播放完成',entering:'进入第一关',chapter:'第一关 · 窗外有事',error:'开场 · 静帧回退'})[phase]||phase}
 });
 async function startPrologue(){token++;clean();stopRain();busy=false;game.classList.remove('busy');game.classList.add('opening-active');ui.hidden=true;currentDetail=null;answer=null;await prologue.start({sound})}
 let introPending=false;try{introPending=sessionStorage.getItem('window-case-prologue-v2')==='pending'}catch{}

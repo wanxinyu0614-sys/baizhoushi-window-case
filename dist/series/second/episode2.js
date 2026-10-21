@@ -1,6 +1,6 @@
 const project = '.';
 const local = './assets';
-const media = source => `${source}?v=20261021-mobile1`;
+const media = source => `${source}?v=20261021-hqpreload1`;
 const seriesMode = new URLSearchParams(location.search).get('series') === '1';
 const demoMode = new URLSearchParams(location.search).get('series') === 'demo';
 if (seriesMode || demoMode) document.title = '奶奶侦探 · 第二关｜手机自己去赶集';
@@ -42,6 +42,20 @@ const scenes = [
   { type: 'clip', label: '摊主不见了', source: media(`${project}/视频/v9.mp4`), progress: '4/4', context: '核实后 · 折返贴膜摊', contextKind: '现在' },
   { type: 'end' },
 ];
+const prefetchedClips = new Set();
+function primeVideo(source) {
+  if (video.getAttribute('src') === source) return;
+  video.src = source; video.preload = 'auto'; video.load();
+}
+function prefetchNextClip(fromIndex) {
+  if (navigator.connection?.saveData) return;
+  const nextClip = scenes.find((step, sceneIndex) => sceneIndex > fromIndex && step.type === 'clip');
+  if (!nextClip || prefetchedClips.has(nextClip.source)) return;
+  prefetchedClips.add(nextClip.source);
+  fetch(nextClip.source, { cache: 'force-cache' })
+    .then(response => response.ok ? response.arrayBuffer() : Promise.reject())
+    .catch(() => prefetchedClips.delete(nextClip.source));
+}
 const questions = {
   first: { title: '第一关 · 处置', progress: '1/4', tag: '现场', kicker: '手已拦住 · 选择下一步', heading: '手机还在自己点', picture: image.v2, note: '陈阿姨想点停手机，奶奶已经拦住她的手。', question: '接下来怎么处理？', options: ['继续在手机上点停', '断开网络', '回拨陌生客服'], answer: 1, feedback: '已断网。先阻断异常点击，再查原因。' },
   permission: { title: '第二关 · 判断', progress: '2/4', tag: '贴膜', heading: '贴膜摊哪里不对劲？', picture: image.k08, note: '陈阿姨只去贴膜，手机却被拿走，还多了陌生软件和控制权限。', question: '最该警惕哪一步？', options: ['贴膜用了几分钟', '送了一张优惠券', '擅自装软件、开控制权限'], answer: 2, feedback: '贴膜不需要装陌生软件，更不需要控制手机。', autoAdvance: true },
@@ -108,7 +122,8 @@ function renderStep() {
   if (step.type === 'end') return showEnd();
 }
 function playClip(step) {
-  still.hidden = true; video.hidden = false; video.muted = muted; video.src = step.source; video.load();
+  still.hidden = true; video.hidden = false; video.muted = muted; primeVideo(step.source);
+  if (video.ended) video.currentTime = 0;
   ui.innerHTML = `${topbar(`第二期 · ${step.label}`, step.progress)}${timelinePill(step)}${step.cue ? `<div class="scene-help opening-cue" id="clip-cue" role="note">${escapeHtml(step.cue)}</div>` : ''}<div class="spacer"></div>`;
   bindHeader();
   video.play().catch(() => {
@@ -167,6 +182,7 @@ function showEnd() {
 video.addEventListener('ended', () => {
   if (scenes[index]?.type === 'clip') next();
 });
+video.addEventListener('playing', () => prefetchNextClip(index));
 video.addEventListener('timeupdate', () => {
   const step = scenes[index]; insert.hidden = !(step?.stopInsert && video.currentTime >= 3.05 && video.currentTime < 3.95);
   const cue = ui.querySelector('#clip-cue');
@@ -196,5 +212,6 @@ if (preview === 'official') {
 } else {
   backdrop(image.v2);
   ui.innerHTML = `${topbar('第二期 · 开始', '1/4')}<div class="spacer"></div><section class="panel start-panel"><div class="speaker">奶奶侦探 · ${seriesMode || demoMode ? '第二关' : '第二期'}</div><h2>手机自己去赶集</h2><p>在街道上帮周奶奶查清：陈阿姨的手机为什么会自己点击？</p><button class="primary" id="start" type="button">${preview === 'v02' ? '试听 V02 新配音' : '开始调查'}</button><div class="helper">${demoMode ? '独立预览，不记录通关 · ' : ''}四次关键判断；剧情会在选项处暂停</div></section>`;
+  primeVideo(preview === 'v02' ? scenes[1].source : scenes[0].source);
   bindHeader(); ui.querySelector('#start').onclick = () => { index = preview === 'v02' ? 0 : -1; next(); };
 }

@@ -1,5 +1,24 @@
 const SERIES_KEY = 'grandma-detective-series-v1';
-const secondUrl = './second/index.html?series=1&v=20261021-mobile1';
+const MEDIA_BUILD = '20261021-hqpreload1';
+const secondUrl = './second/index.html?series=1&v=' + MEDIA_BUILD;
+const warmedRoutes = new Set();
+function warmRouteVideo() {
+  if (navigator.connection?.saveData) return;
+  const progress = readProgress();
+  const source = progress.level1
+    ? './second/assets/V01-修复版.mp4?v=' + MEDIA_BUILD
+    : './first/assets/video/V01.mp4?v=' + MEDIA_BUILD;
+  if (warmedRoutes.has(source)) return;
+  warmedRoutes.add(source);
+  fetch(source, { cache: 'force-cache' })
+    .then(response => response.ok ? response.arrayBuffer() : Promise.reject())
+    .catch(() => warmedRoutes.delete(source));
+}
+function scheduleWarmup() {
+  const run = () => warmRouteVideo();
+  if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 1200 });
+  else setTimeout(run, 500);
+}
 function readProgress() {
   try {
     const value = JSON.parse(localStorage.getItem(SERIES_KEY));
@@ -27,7 +46,7 @@ function showProgress() {
     firstState.textContent = '已通关';
     firstState.classList.add('done');
     firstLink.textContent = '重玩第一关 →';
-    firstLink.href = './first/index.html?series=1&restart=1&v=20261021-mobile1';
+    firstLink.href = './first/index.html?series=1&restart=1&v=' + MEDIA_BUILD;
     secondCard.classList.remove('locked');
     secondState.textContent = progress.level2 ? '已通关' : '已解锁';
     secondState.classList.add('done');
@@ -37,7 +56,7 @@ function showProgress() {
   } else {
     firstState.textContent = '待调查';
     firstState.classList.remove('done');
-    firstLink.href = './first/index.html?series=1&restart=1&v=20261021-mobile1';
+    firstLink.href = './first/index.html?series=1&restart=1&v=' + MEDIA_BUILD;
     firstLink.innerHTML = '开始第一关 <span aria-hidden="true">→</span>';
     secondCard.classList.add('locked');
     secondState.textContent = '待解锁';
@@ -55,4 +74,5 @@ document.querySelector('#level-two-link').addEventListener('click', event => {
   if (event.currentTarget.getAttribute('aria-disabled') === 'true') event.preventDefault();
 });
 showProgress();
-window.addEventListener('pageshow', showProgress);
+scheduleWarmup();
+window.addEventListener('pageshow', () => { showProgress(); scheduleWarmup(); });
