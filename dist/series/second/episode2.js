@@ -1,6 +1,5 @@
 const project = '.';
 const local = './assets';
-const media = source => `${source}?v=20261021-hqpreload1`;
 const seriesMode = new URLSearchParams(location.search).get('series') === '1';
 const demoMode = new URLSearchParams(location.search).get('series') === 'demo';
 if (seriesMode || demoMode) document.title = '奶奶侦探 · 第二关｜手机自己去赶集';
@@ -9,12 +8,13 @@ function markSeriesComplete() {
   if (!seriesMode) return;
   try { const prior = JSON.parse(localStorage.getItem(seriesKey)) || {}; if (prior.level1 === true) localStorage.setItem(seriesKey, JSON.stringify({ ...prior, level2: true })); } catch {}
 }
-function returnToSeries() { location.assign('../index.html?v=20261021-playback2'); }
+function returnToSeries() { location.assign('../index.html?v=20261021-polish1'); }
 const video = document.querySelector('#clip');
 const still = document.querySelector('#still');
 const insert = document.querySelector('#stop-insert');
 const game = document.querySelector('#game');
 const ui = document.querySelector('#ui');
+const caption = document.querySelector('#voice-caption');
 const image = {
   v2: `${project}/视频/逐帧检查/v2/frame-3800.jpg`,
   v5: `${project}/视频/逐帧检查/v5/frame-3800.jpg`,
@@ -25,27 +25,49 @@ const image = {
   k12: `${local}/K12-验证码最后一道门-大特写.jpg`,
 };
 const scenes = [
-  { type: 'clip', label: '手机异动', source: media(`${local}/V01-修复版.mp4`), progress: '1/4' },
-  { type: 'clip', label: '先别碰', source: media(`${local}/V02-新台词成片.mp4`), progress: '1/4', cue: '周姐！我要不要点停它？', replyCue: '别碰。', replyAt: 2.58, cueEnd: 3.65 },
+  { type: 'clip', clipId: 1, label: '手机异动', source: CaseAssets.secondClips[0], progress: '1/4' },
+  { type: 'clip', clipId: 2, label: '先别碰', source: CaseAssets.secondClips[1], progress: '1/4' },
   { type: 'question', id: 'first' },
-  { type: 'clip', label: '追问', source: media(`${project}/视频/v3.mp4`), progress: '2/4' },
-  { type: 'clip', label: '半小时前', source: media(`${project}/视频/v4.mp4`), progress: '2/4', context: '半小时前 · 免费贴膜摊' },
-  { type: 'clip', label: '贴膜摊', source: media(`${project}/视频/v5.mp4`), progress: '2/4' },
+  { type: 'clip', clipId: 3, label: '追问', source: CaseAssets.secondClips[2], progress: '2/4' },
+  { type: 'clip', clipId: 4, label: '半小时前', source: CaseAssets.secondClips[3], progress: '2/4', context: '半小时前 · 免费贴膜摊' },
+  { type: 'clip', clipId: 5, label: '贴膜摊', source: CaseAssets.secondClips[4], progress: '2/4' },
   { type: 'question', id: 'permission' },
-  { type: 'clip', label: '推理手账', source: media(`${project}/视频/v6.mp4`), progress: '3/4' },
+  { type: 'clip', clipId: 6, label: '推理手账', source: CaseAssets.secondClips[5], progress: '3/4' },
   { type: 'still', label: '手账特写', source: image.k10, duration: 950, progress: '3/4' },
   { type: 'question', id: 'deduce' },
-  { type: 'clip', label: '验证码危机', source: media(`${project}/视频/v7.mp4`), progress: '4/4', context: '断网前 · 陈阿姨的回忆', stopInsert: true },
+  { type: 'clip', clipId: 7, label: '验证码危机', source: CaseAssets.secondClips[6], progress: '4/4', context: '断网前 · 陈阿姨的回忆', stopInsert: true },
   { type: 'question', id: 'code' },
-  { type: 'clip', label: '官方核实', source: media(`${project}/视频/v8.mp4`), progress: '4/4' },
+  { type: 'clip', clipId: 8, label: '官方核实', source: CaseAssets.secondClips[7], progress: '4/4' },
   { type: 'outcome' },
-  { type: 'clip', label: '摊主不见了', source: media(`${project}/视频/v9.mp4`), progress: '4/4', context: '核实后 · 折返贴膜摊', contextKind: '现在' },
+  { type: 'clip', clipId: 9, label: '摊主不见了', source: CaseAssets.secondClips[8], progress: '4/4', context: '核实后 · 折返贴膜摊', contextKind: '现在' },
   { type: 'end' },
 ];
 const prefetchedClips = new Set();
 const clipSources = new Map();
 function primeVideo(source) {
   return CaseMedia.url(source).then(url => { clipSources.set(source, url); return url; });
+}
+async function prepareChapter(button, label, begin) {
+  button.disabled=true;button.textContent='正在准备本关剧情…';
+  try {
+    for(let i=0;i<CaseAssets.secondClips.length;i++){
+      await primeVideo(CaseAssets.secondClips[i]);
+      if(button.isConnected){button.textContent=`正在准备剧情 ${i+1}/9`;const helper=ui.querySelector('.helper');if(helper)helper.textContent=`本关视频准备中 ${i+1}/9`;}
+    }
+    if(!button.isConnected)return;
+    button.disabled=false;button.textContent=label;button.onclick=begin;
+    ui.querySelector('.helper').textContent='剧情已准备好 · 四次关键判断时暂停';
+  }catch{
+    if(!button.isConnected)return;
+    button.disabled=false;button.textContent='重新准备剧情';button.onclick=()=>prepareChapter(button,label,begin);
+    ui.querySelector('.helper').textContent='网络有点慢，已准备的片段会保留。';
+  }
+}
+function syncCaption(){
+  const step=scenes[index],time=video.currentTime;
+  const cue=!menuOpen&&step?.type==='clip'&&(CaseCaptions[step.clipId]||[]).find(c=>time>=c.start&&time<c.end);
+  caption.hidden=!cue;
+  if(cue){caption.textContent=cue.text;caption.dataset.role=cue.role;caption.dataset.speaker=cue.speaker;caption.setAttribute('aria-label',cue.speaker+'：'+cue.text);}
 }
 function prefetchNextClip(fromIndex) {
   if (navigator.connection?.saveData) return;
@@ -83,7 +105,7 @@ function timelinePill(step) {
 function bindHeader() {
   ui.querySelector('#pause-control')?.addEventListener('click', () => {
     if (menuOpen) { resumeFromPause(); return; }
-    pausePosition = video.currentTime; video.pause(); clearTimeout(stillTimer); menuOpen = true; playRequest++;
+    pausePosition = video.currentTime; video.pause(); clearTimeout(stillTimer); menuOpen = true; playRequest++;caption.hidden=true;
     ui.innerHTML = `${topbar('暂停', '—')}<div class="spacer"></div><section class="panel dialogue"><div class="speaker">奶奶侦探</div><p>当前画面已暂停。</p><button class="primary" id="resume" type="button">继续</button><button class="minor" id="restart" type="button">从头开始</button>${seriesMode || demoMode ? '<button class="minor" id="series-map" type="button">返回关卡地图</button>' : ''}</section>`;
     bindHeader();
     ui.querySelector('#resume').onclick = resumeFromPause;
@@ -103,7 +125,7 @@ function resumeFromPause() {
   }
 }
 function showToast(message) { const el = document.querySelector('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(el._timer); el._timer = setTimeout(() => el.classList.remove('show'), 2500); }
-function backdrop(src) { playRequest++; video.pause(); video.hidden = true; still.src = src; still.hidden = false; insert.hidden = true; }
+function backdrop(src) { playRequest++; video.pause(); video.hidden = true; still.src = src; still.hidden = false; insert.hidden = true;caption.hidden=true; }
 function next() { clearTimeout(stillTimer); video.pause(); insert.hidden = true; index += 1; renderStep(); }
 function renderStep() {
   const step = scenes[index];
@@ -120,8 +142,8 @@ function renderStep() {
 async function playClip(step) {
   const sceneIndex=index;
   const request=++playRequest, active=()=>request===playRequest&&sceneIndex===index&&!menuOpen;
-  video.pause();video.muted = muted;
-  ui.innerHTML = `${topbar(`第二期 · ${step.label}`, step.progress)}${timelinePill(step)}${step.cue ? `<div class="scene-help opening-cue" id="clip-cue" role="note">${escapeHtml(step.cue)}</div>` : ''}<div class="spacer"></div>`;
+  video.pause();video.muted = muted;caption.hidden=true;
+  ui.innerHTML = `${topbar(`第二期 · ${step.label}`, step.progress)}${timelinePill(step)}<div class="spacer"></div>`;
   bindHeader();
   let source=clipSources.get(step.source);
   if(!source){
@@ -174,7 +196,7 @@ function showOutcome() {
       <p class="letter-conclusion">经核实，您当前账户暂未查到异常转出。</p>
       <p class="letter-body">“报出验证码帮您撤回”并非银行办理方式。请按官方指引处理账户，旧手机暂勿用于银行操作。</p>
       <div class="letter-signature"><span>银行官方服务渠道</span><span class="letter-seal">已核实</span></div>
-      <button class="letter-next" id="official-continue" type="button">读完回函，返回贴膜摊 <span aria-hidden="true">→</span></button>
+      <button class="letter-next" id="official-continue" type="button">继续调查，返回贴膜摊 <span aria-hidden="true">→</span></button>
     </section>`;
   bindHeader(); ui.querySelector('#official-continue').onclick = next;
 }
@@ -192,11 +214,7 @@ video.addEventListener('ended', () => {
 video.addEventListener('playing', () => prefetchNextClip(index));
 video.addEventListener('timeupdate', () => {
   const step = scenes[index]; insert.hidden = !(step?.stopInsert && video.currentTime >= 3.05 && video.currentTime < 3.95);
-  const cue = ui.querySelector('#clip-cue');
-  if (cue && step?.replyCue) {
-    cue.hidden = video.currentTime >= step.cueEnd;
-    cue.textContent = video.currentTime >= step.replyAt ? step.replyCue : step.cue;
-  }
+  syncCaption();
 });
 video.addEventListener('error', () => {
   if (ui.querySelector('#clip-retry')) return;
@@ -219,8 +237,5 @@ if (preview === 'official') {
 } else {
   backdrop(image.v2);
   ui.innerHTML = `${topbar('第二期 · 开始', '1/4')}<div class="spacer"></div><section class="panel start-panel"><div class="speaker">奶奶侦探 · ${seriesMode || demoMode ? '第二关' : '第二期'}</div><h2>手机自己去赶集</h2><p>在街道上帮周奶奶查清：陈阿姨的手机为什么会自己点击？</p><button class="primary" id="start" type="button">${preview === 'v02' ? '试听 V02 新配音' : '开始调查'}</button><div class="helper">${demoMode ? '独立预览，不记录通关 · ' : ''}四次关键判断；剧情会在选项处暂停</div></section>`;
-  const openingSource=preview === 'v02' ? scenes[1].source : scenes[0].source;
-  const start=ui.querySelector('#start');start.disabled=true;const label=start.textContent;start.textContent='正在准备剧情…';
-  CaseMedia.url(openingSource,value=>{if(index===-1&&ui.querySelector('#start'))ui.querySelector('.helper').textContent=CaseMedia.progressText(value)}).then(source=>{clipSources.set(openingSource,source);if(ui.querySelector('#start')){start.disabled=false;start.textContent=label;ui.querySelector('.helper').textContent='剧情已准备好 · 四次关键判断时暂停'}}).catch(()=>{start.disabled=false;start.textContent='重试并开始调查'});
-  bindHeader(); ui.querySelector('#start').onclick = () => { index = preview === 'v02' ? 0 : -1; next(); };
+  bindHeader();const start=ui.querySelector('#start');prepareChapter(start,start.textContent,()=>{index=preview === 'v02'?0:-1;next()});
 }

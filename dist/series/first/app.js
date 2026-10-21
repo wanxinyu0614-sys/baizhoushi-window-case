@@ -16,8 +16,14 @@ const MEDIA_BUILD='20261021-hqpreload1';
 const video=id=>'assets/video/'+id+'?v='+MEDIA_BUILD;
 let loopVideoWarmup=null;
 function warmLoopVideo(){
- if(loopVideoWarmup||navigator.connection?.saveData)return;
+ if(loopVideoWarmup)return loopVideoWarmup;
  loopVideoWarmup=CaseMedia.warm(video('L01.mp4'));
+ return loopVideoWarmup;
+}
+let secondChapterWarmup=null;
+function warmSecondChapter(){
+ if(!seriesMode||secondChapterWarmup)return;
+ secondChapterWarmup=Promise.resolve(warmLoopVideo()).then(()=>CaseMedia.prefetch(CaseAssets.secondClips,({completed,total})=>{game.dataset.nextChapterCache=completed+'/'+total}));
 }
 const voiceBuffers=new Map();
 function unlockAudio(){
@@ -123,7 +129,7 @@ function storyHTML(){switch(state.stage){
  case'lower':return `<div class="spacer"></div><section class="panel decision-panel crisis-panel"><div class="decision-status"><span>转账倒计时</span><strong>00:42</strong></div><h2>何叔已经把卡插进去了</h2><p>周奶奶现在该怎么做？</p><div class="decision-options"><button data-action="choose-listen"><b>继续听</b><span>对方也许能解释清楚</span></button><button data-action="choose-stop" class="danger-choice"><b>立即止损</b><span>挂断电话，取消并取回卡</span></button><button data-action="choose-wait"><b>先输金额</b><span>不点确认就不会有事</span></button></div>${decisionFeedback?`<div class="decision-feedback" role="status">${decisionFeedback}</div>`:''}</section>`;
  case'pause':return autoPanel('周奶奶','何叔，别转！先挂电话，把手离开确认键。');
  case'cancel':return autoPanel('风险已止','电话挂断，转账取消，银行卡也拿回来了。');
- case'verify':return state.verified?`<div class="spacer"></div><article class="official-letter" aria-label="原申请平台官方核实回函"><div class="letterhead"><span class="letter-monogram" aria-hidden="true">函</span><div><div class="letter-sender">原申请平台 · 官方客户服务</div><div class="letter-type">申请事项核实回函</div></div></div><div class="letter-rule"></div><p class="letter-recipient">何先生：</p><p class="letter-conclusion">您的申请无待缴解冻费</p><p class="letter-body">经原申请入口核查，当前申请记录正常，未产生来电所述的 1,999 元“解冻费”。</p><dl class="letter-facts"><div><dt>待缴费用</dt><dd>未查询到解冻费</dd></div><div><dt>个人收款账户</dt><dd>非官方收费渠道</dd></div></dl><p class="letter-body">官方不会要求您向个人账户缴费。请保持挂断，勿按陌生来电指引转账。</p><div class="letter-signature"><span>原申请平台 · 官方客户服务</span><span class="letter-seal">已核实</span></div><button class="letter-next" data-action="official-read">已阅读回函，继续 <span aria-hidden="true">→</span></button></article>`:`<div class="spacer"></div><section class="panel decision-panel verify-decision"><div class="decision-status"><span>电话已挂断</span><strong>继续核实</strong></div><h2>下一步从哪里查？</h2><p>选错入口，仍可能回到骗子的控制里。</p><div class="decision-options"><button data-action="verify-link"><b>短信里的链接</b><span>打开“客服处理页”</span></button><button data-action="verify-callback"><b>回拨刚才号码</b><span>再问一次解冻费</span></button><button data-action="verify-original" class="safe-choice"><b>原来的 App</b><span>查看申请记录和官方客服</span></button></div>${decisionFeedback?`<div class="decision-feedback" role="status">${decisionFeedback}</div>`:''}</section>`;
+ case'verify':return state.verified?`<div class="spacer"></div><article class="official-letter" aria-label="原申请平台官方核实回函"><div class="letterhead"><span class="letter-monogram" aria-hidden="true">函</span><div><div class="letter-sender">原申请平台 · 官方客户服务</div><div class="letter-type">申请事项核实回函</div></div></div><div class="letter-rule"></div><p class="letter-recipient">何先生：</p><p class="letter-conclusion">无需缴纳解冻费</p><p class="letter-body">申请记录正常，请勿向个人账户转账。</p><div class="letter-signature"><span>官方客户服务</span><span class="letter-seal">已核实</span></div><button class="letter-next" data-action="official-read">继续结案 <span aria-hidden="true">→</span></button></article>`:`<div class="spacer"></div><section class="panel decision-panel verify-decision"><div class="decision-status"><span>电话已挂断</span><strong>继续核实</strong></div><h2>下一步从哪里查？</h2><p>选错入口，仍可能回到骗子的控制里。</p><div class="decision-options"><button data-action="verify-link"><b>短信里的链接</b><span>打开“客服处理页”</span></button><button data-action="verify-callback"><b>回拨刚才号码</b><span>再问一次解冻费</span></button><button data-action="verify-original" class="safe-choice"><b>原来的 App</b><span>查看申请记录和官方客服</span></button></div>${decisionFeedback?`<div class="decision-feedback" role="status">${decisionFeedback}</div>`:''}</section>`;
  case'result':return `<div class="spacer"></div><section class="panel pass-panel"><div class="pass-kicker">过关判定</div><h2>你做对了两个关键决定</h2><div class="pass-list"><span>✓ 及时止损</span><span>✓ 取回银行卡</span><span>✓ 从原入口核实</span></div><strong>第一关通过</strong></section>`;
  case'finish':return `<div class="spacer"></div><section class="panel finish-panel"><div class="pass-badge" aria-hidden="true">✓</div><div class="speaker">窗外有事 · 第一关</div><h2>成功阻止可疑转账</h2><p>因为你完成了三步：</p><div class="finish-steps"><b>停手</b><span>→</span><b>取卡</b><span>→</span><b>原入口核实</b></div>${seriesMode?'<p class="series-unlocked">第二关「手机自己去赶集」已解锁</p>'+button('进入第二关','next-level')+'<button class="minor" data-action="series-map">返回关卡地图</button>':button('再玩一次','restart')}</section>`;
  }}
@@ -172,7 +178,7 @@ async function render({transition='cut',focus=null}={}){
   const focal={reaction:'56% 35%',pause:'52% 52%',cancel:'57% 55%',intro:'63% 38%'}[state.stage]||'50% 42%';media.style.transformOrigin=focal;play(media,[{transform:'scale(1)'},{transform:'scale(1.045)'}],3000,{easing:'ease-out'});
  }
  if(loopFallback)toast('调查循环未能加载，已切换为静态画面。');
- save();markSeriesComplete();preloadNext();if(!game.classList.contains('opening-active')&&!playCharacterVoice())scheduleAutoAdvance();return true;
+ save();markSeriesComplete();preloadNext();if(!game.classList.contains('opening-active')){warmSecondChapter();if(!playCharacterVoice())scheduleAutoAdvance()}return true;
 }
 function preloadNext(){const i=F.stages.indexOf(state.stage);for(const s of F.stages.slice(i+1,i+3)){const im=new Image();im.src=art(SHOTS[s][0])}}
 async function go(to,transition='cut'){currentDetail=null;answer=null;decisionFeedback=null;state=F.advance(state,to);await render({transition});if(!['intro','message'].includes(to))stopRain()}
@@ -184,8 +190,8 @@ async function action(a){
  if(a==='close-modal'){game.querySelector('dialog')?.close();game.querySelector('dialog')?.remove();scheduleAutoAdvance();return}
  if(busy)return;
  switch(a){
- case'next-level':location.assign('../second/index.html?series=1&v=20261021-playback2');return;
- case'series-map':location.assign('../index.html?v=20261021-playback2');return;
+ case'next-level':location.assign('../second/index.html?series=1&v=20261021-polish1');return;
+ case'series-map':location.assign('../index.html?v=20261021-polish1');return;
  case'restart':game.querySelector('dialog')?.remove();state=F.fresh();playedVoiceSignatures.clear();try{localStorage.removeItem(KEY)}catch{}await startPrologue();return;
  case'retry-image':game.querySelector('dialog')?.remove();await render();return;
  case'skip-intro':await go('raise');toast('何叔正准备提前关店去转账。先调查现场三处线索。');return;
@@ -217,7 +223,7 @@ function stopRain(){if(rainSource){try{rainSource.stop()}catch{}rainSource.disco
 function syncRain(){if(!sound){stopRain();return}if(rainSource)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();audioContext.resume();const buffer=audioContext.createBuffer(1,audioContext.sampleRate*2,audioContext.sampleRate),data=buffer.getChannelData(0);let previous=0;for(let i=0;i<data.length;i++){previous=(previous+.03*(Math.random()*2-1))/1.03;data[i]=previous*2.8}rainSource=audioContext.createBufferSource();rainSource.buffer=buffer;rainSource.loop=true;rainGain=audioContext.createGain();rainGain.gain.value=.12;rainSource.connect(rainGain);rainGain.connect(audioContext.destination);rainSource.start()}catch{}}
 const prologue=new CasePrologue({host:document.querySelector('#prologue'),isReduced:()=>reduced,icons:icon,
  enterCase:async()=>{currentDetail=null;answer=null;state=F.fresh();return await render({transition:'none'})},
- revealCase:()=>{ui.hidden=false;game.classList.remove('opening-active');syncRain();document.querySelector('#debug').textContent=SHOTS[state.stage][1];if(!voiceAudio&&!playCharacterVoice())scheduleAutoAdvance()},
+ revealCase:()=>{ui.hidden=false;game.classList.remove('opening-active');syncRain();document.querySelector('#debug').textContent=SHOTS[state.stage][1];if(!voiceAudio&&!playCharacterVoice())scheduleAutoAdvance();warmSecondChapter()},
  onShopVisible:()=>beep('message'),
  toggleSound:()=>{sound=!sound;return sound},
  ensureSound:()=>{sound=true;unlockAudio();warmVoices();return sound},

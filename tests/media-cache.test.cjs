@@ -38,3 +38,21 @@ test('a truncated download is never marked as ready', async () => {
   const media=page(async()=>new Response('short',{headers:{'Content-Length':'99'}}));
   await assert.rejects(media.url('./clip.mp4'),/下载不完整/);
 });
+test('the complete next chapter is persisted before navigating to its page', async () => {
+  const storage=new Map(),requests=[];
+  const load=async url=>{requests.push(url);return new Response('chapter-video',{headers:{'Content-Type':'video/mp4'}})};
+  const clips=Array.from({length:9},(_,i)=>`https://demo.example/series/second/v${i+1}.mp4`);
+  const firstChapter=page(load,storage),progress=[];
+  const result=await firstChapter.prefetch(clips,value=>progress.push(value.completed));
+  assert.equal(result.completed,9);assert.equal(result.failed.length,0);
+  assert.deepEqual(progress,[1,2,3,4,5,6,7,8,9]);
+  const secondChapter=page(load,storage);
+  for(const clip of clips)assert.ok((await secondChapter.url(clip)).startsWith('blob:'));
+  assert.equal(requests.length,9,'changing chapters must not redownload prepared clips');
+});
+test('a failed background clip does not stop preparation of the remaining chapter', async () => {
+  const media=page(async url=>url.includes('missing')?new Response('',{status:503}):new Response('ok'));
+  const result=await media.prefetch(['./first.mp4','./missing.mp4','./last.mp4']);
+  assert.equal(result.completed,2);assert.equal(result.failed.length,1);
+  assert.equal(await (await media.blob('./last.mp4')).text(),'ok');
+});

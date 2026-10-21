@@ -1,6 +1,6 @@
 const SERIES_KEY = 'grandma-detective-series-v1';
 const MEDIA_BUILD = '20261021-hqpreload1';
-const APP_BUILD = '20261021-playback2';
+const APP_BUILD = '20261021-polish1';
 const secondUrl = './second/index.html?series=1&v=' + APP_BUILD;
 const warmedRoutes = new Set();
 function warmRouteVideo() {
@@ -11,7 +11,7 @@ function warmRouteVideo() {
     : './first/assets/video/V01.mp4?v=' + MEDIA_BUILD;
   if (warmedRoutes.has(source)) return;
   warmedRoutes.add(source);
-  CaseMedia.warm(source)
+  (progress.level1 ? CaseMedia.prefetch(CaseAssets.secondClips) : CaseMedia.warm(source))
     .catch(() => warmedRoutes.delete(source));
 }
 function scheduleWarmup() {

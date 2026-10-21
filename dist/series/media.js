@@ -36,7 +36,7 @@ window.CaseMedia = (() => {
         if (!data.size) throw Error('素材为空');
         ready.set(key, { blob: data, url: URL.createObjectURL(data) });
         report(key, 1);
-        if (!cached && cache) cache.put(key, new Response(data, { headers: { 'Content-Type': data.type, 'Content-Length': String(data.size) } })).catch(() => {});
+        if (!cached && cache) await cache.put(key, new Response(data, { headers: { 'Content-Type': data.type, 'Content-Length': String(data.size) } })).catch(() => {});
         return data;
       })().finally(() => pending.delete(key)));
       return await pending.get(key);
@@ -44,6 +44,11 @@ window.CaseMedia = (() => {
   }
   async function url(source, onProgress) { await blob(source, onProgress); return ready.get(new URL(source, location.href).href).url; }
   function warm(source) { return blob(source).catch(() => null); }
+  async function prefetch(sources, onProgress) {
+    const unique=[...new Set(sources)],failed=[];let completed=0;
+    for(const source of unique){try{await blob(source);completed++}catch{failed.push(source)}onProgress?.({completed,total:unique.length,failed:failed.length});}
+    return {completed,total:unique.length,failed};
+  }
   function progressText(value) { return value == null ? '正在准备剧情…' : value >= 1 ? '剧情已准备好' : `正在准备剧情 ${Math.round(value * 100)}%`; }
-  return { blob, url, warm, progressText };
+  return { blob, url, warm, prefetch, progressText };
 })();
