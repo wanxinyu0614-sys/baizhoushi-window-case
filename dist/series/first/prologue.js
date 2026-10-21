@@ -6,7 +6,7 @@ class CasePrologue {
   this.host.addEventListener('click',async e=>{
    const action=e.target.closest('[data-opening]')?.dataset.opening;if(!action)return;
    if(action==='start'&&this.phase==='ready')await this.playOpening();
-   if(action==='skip'&&['ready','playing','complete','error'].includes(this.phase))await this.enter(false);
+   if(action==='skip'&&['loading','ready','playing','complete','error'].includes(this.phase)){this.setSound(this.ensureSound());await this.enter(false)}
    if(action==='look'&&this.phase==='complete')await this.enter(true);
    if(action==='retry'&&this.phase==='error')await this.start({sound:this.sound});
    if(action==='sound')this.setSound(this.toggleSound());
@@ -39,10 +39,14 @@ class CasePrologue {
   this.host.innerHTML=`<div class="opening-stage"><div class="opening-cover" aria-hidden="true"><span>第一关</span><strong>窗外有事</strong></div><video class="opening-video" data-src="assets/video/V01.mp4" preload="none" playsinline muted hidden aria-label="周奶奶在家中介绍自己并转身望向窗外"></video><img class="opening-fallback" src="assets/intro-grandma-front-monocular.jpg" alt="面向玩家的周奶奶"></div><div class="opening-shade" aria-hidden="true"></div><div class="opening-tools"><button class="icon-button" data-opening="sound" aria-label="${this.sound?'关闭':'开启'}周奶奶配音" aria-pressed="${this.sound}">${this.icons(this.sound?'sound':'muted')}</button><button class="opening-skip" data-opening="skip">跳过介绍</button></div><section class="panel opening-card opening-start"><h1>窗外有事</h1><p>周奶奶想跟你说几句话。</p><button class="primary" data-opening="start">播放开场视频</button><small>约 8 秒，视频正在提前准备</small></section><p class="opening-caption" aria-live="off" hidden></p><section class="opening-complete" hidden></section><div class="opening-loading" role="status" hidden>正在加载视频…</div><section class="opening-error panel" hidden><p>网络有点慢，可以重试，或直接用图文继续。</p><button class="primary" data-opening="retry">重新加载</button><button class="minor" data-opening="skip">用图文继续</button></section><div class="opening-chapter" hidden><span>第一关</span><strong>窗外有事</strong></div>`;
   this.video=this.host.querySelector('.opening-video');
   this.video.dataset.src+='?v=20261021-hqpreload1';
-  this.video.src=this.video.dataset.src;this.video.preload='auto';this.video.load();
+  const startButton=this.host.querySelector('[data-opening="start"]');startButton.disabled=true;startButton.textContent='正在准备开场…';
+  this.prepared=CaseMedia.url(this.video.dataset.src,progress=>{if(this.current(epoch))this.host.querySelector('.opening-start small').textContent=CaseMedia.progressText(progress)}).then(async source=>{
+   if(!this.current(epoch))return;this.video.src=source;this.video.preload='auto';this.video.load();
+   await new Promise((resolve,reject)=>{this.video.addEventListener('loadeddata',resolve,{once:true});this.video.addEventListener('error',reject,{once:true})});
+   if(!this.current(epoch))return;startButton.disabled=false;startButton.textContent='播放开场视频';this.host.querySelector('.opening-start small').textContent='准备完成 · 约 8 秒';this.setPhase('ready');
+  }).catch(()=>{if(this.current(epoch))this.useFallback()});
   this.video.addEventListener('timeupdate',()=>{if(this.phase==='playing')this.setCaption(this.video.currentTime)});
   this.video.addEventListener('ended',()=>{this.videoEnded=true;if(this.phase==='playing')this.complete()});
-  if(this.current(epoch))this.setPhase('ready');
  }
  useFallback(){
   this.pauseMedia();this.video.hidden=true;this.host.querySelector('.opening-cover').hidden=true;this.host.querySelector('.opening-fallback').hidden=false;this.host.querySelector('.opening-loading').hidden=true;this.host.querySelector('.opening-error').hidden=false;this.host.querySelector('.opening-start').hidden=true;this.setPhase('error');

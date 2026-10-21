@@ -10,8 +10,7 @@ function warmRouteVideo() {
     : './first/assets/video/V01.mp4?v=' + MEDIA_BUILD;
   if (warmedRoutes.has(source)) return;
   warmedRoutes.add(source);
-  fetch(source, { cache: 'force-cache' })
-    .then(response => response.ok ? response.arrayBuffer() : Promise.reject())
+  CaseMedia.warm(source)
     .catch(() => warmedRoutes.delete(source));
 }
 function scheduleWarmup() {

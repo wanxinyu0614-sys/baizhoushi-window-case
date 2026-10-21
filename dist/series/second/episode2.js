@@ -43,17 +43,16 @@ const scenes = [
   { type: 'end' },
 ];
 const prefetchedClips = new Set();
+const clipSources = new Map();
 function primeVideo(source) {
-  if (video.getAttribute('src') === source) return;
-  video.src = source; video.preload = 'auto'; video.load();
+  return CaseMedia.url(source).then(url => { clipSources.set(source, url); return url; });
 }
 function prefetchNextClip(fromIndex) {
   if (navigator.connection?.saveData) return;
   const nextClip = scenes.find((step, sceneIndex) => sceneIndex > fromIndex && step.type === 'clip');
   if (!nextClip || prefetchedClips.has(nextClip.source)) return;
   prefetchedClips.add(nextClip.source);
-  fetch(nextClip.source, { cache: 'force-cache' })
-    .then(response => response.ok ? response.arrayBuffer() : Promise.reject())
+  primeVideo(nextClip.source)
     .catch(() => prefetchedClips.delete(nextClip.source));
 }
 const questions = {
@@ -67,16 +66,12 @@ let muted = false;
 let menuOpen = false;
 let pausePosition = 0;
 let stillTimer = 0;
+let playRequest = 0;
 
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]); }
 function topbar(title, progress = '1/4') {
   const displayTitle = seriesMode || demoMode ? title.replace(/^(第一关|第二关|第三关|第四关|第二期)/, '第二关') : title;
-  return `<div class="topbar">
-    <button class="icon-button" id="pause-control" type="button" aria-label="打开暂停菜单">‹</button>
-    <div class="header-chip"><span>${escapeHtml(displayTitle)}</span><span class="progress">${escapeHtml(progress)}</span></div>
-    <button class="icon-button" id="sound-control" type="button" aria-label="${muted ? '开启声音' : '关闭声音'}">${muted ? '⌁' : '◖'}</button>
-    <button class="icon-button" id="help-control" type="button" aria-label="帮助">?</button>
-  </div>`;
+  return CaseChrome.header({title:displayTitle,progress,sound:!muted});
 }
 function timelinePill(step) {
   if (!step.context) return '';
@@ -88,14 +83,14 @@ function timelinePill(step) {
 function bindHeader() {
   ui.querySelector('#pause-control')?.addEventListener('click', () => {
     if (menuOpen) { resumeFromPause(); return; }
-    pausePosition = video.currentTime; video.pause(); clearTimeout(stillTimer); menuOpen = true;
+    pausePosition = video.currentTime; video.pause(); clearTimeout(stillTimer); menuOpen = true; playRequest++;
     ui.innerHTML = `${topbar('暂停', '—')}<div class="spacer"></div><section class="panel dialogue"><div class="speaker">奶奶侦探</div><p>当前画面已暂停。</p><button class="primary" id="resume" type="button">继续</button><button class="minor" id="restart" type="button">从头开始</button>${seriesMode || demoMode ? '<button class="minor" id="series-map" type="button">返回关卡地图</button>' : ''}</section>`;
     bindHeader();
     ui.querySelector('#resume').onclick = resumeFromPause;
     ui.querySelector('#restart').onclick = () => { menuOpen = false; index = -1; next(); };
     if (seriesMode || demoMode) ui.querySelector('#series-map').onclick = returnToSeries;
   });
-  ui.querySelector('#sound-control')?.addEventListener('click', () => { muted = !muted; video.muted = muted; const b = ui.querySelector('#sound-control'); b.textContent = muted ? '⌁' : '◖'; b.setAttribute('aria-label', muted ? '开启声音' : '关闭声音'); });
+  ui.querySelector('#sound-control')?.addEventListener('click', () => { muted = !muted; video.muted = muted; const b = ui.querySelector('#sound-control'); b.innerHTML = CaseChrome.icon(muted ? 'muted' : 'sound'); b.setAttribute('aria-label', muted ? '开启声音' : '关闭声音'); b.setAttribute('aria-pressed',String(!muted)); });
   ui.querySelector('#help-control')?.addEventListener('click', () => showToast('答题时画面会暂停；贴膜和验证码判断答对后自动继续。'));
 }
 function resumeFromPause() {
@@ -108,11 +103,12 @@ function resumeFromPause() {
   }
 }
 function showToast(message) { const el = document.querySelector('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(el._timer); el._timer = setTimeout(() => el.classList.remove('show'), 2500); }
-function backdrop(src) { video.pause(); video.hidden = true; still.src = src; still.hidden = false; insert.hidden = true; }
+function backdrop(src) { playRequest++; video.pause(); video.hidden = true; still.src = src; still.hidden = false; insert.hidden = true; }
 function next() { clearTimeout(stillTimer); video.pause(); insert.hidden = true; index += 1; renderStep(); }
 function renderStep() {
   const step = scenes[index];
   if (!step) return;
+  if (step.type !== 'clip') prefetchNextClip(index);
   game.dataset.stage = step.type;
   game.classList.toggle('has-evidence', ['question', 'outcome', 'end'].includes(step.type));
   if (step.type === 'clip') return playClip(step);
@@ -121,12 +117,23 @@ function renderStep() {
   if (step.type === 'outcome') return showOutcome();
   if (step.type === 'end') return showEnd();
 }
-function playClip(step) {
-  still.hidden = true; video.hidden = false; video.muted = muted; primeVideo(step.source);
-  if (video.ended) video.currentTime = 0;
+async function playClip(step) {
+  const sceneIndex=index;
+  const request=++playRequest, active=()=>request===playRequest&&sceneIndex===index&&!menuOpen;
+  video.pause();video.muted = muted;
   ui.innerHTML = `${topbar(`第二期 · ${step.label}`, step.progress)}${timelinePill(step)}${step.cue ? `<div class="scene-help opening-cue" id="clip-cue" role="note">${escapeHtml(step.cue)}</div>` : ''}<div class="spacer"></div>`;
   bindHeader();
+  let source=clipSources.get(step.source);
+  if(!source){
+    ui.insertAdjacentHTML('beforeend','<section class="media-loading"><span class="media-status">正在准备剧情…</span><progress max="1"></progress><small>准备好后会自动播放</small></section>');
+    try{source=await CaseMedia.url(step.source,value=>{if(!active())return;const label=ui.querySelector('.media-status'),bar=ui.querySelector('.media-loading progress');if(label)label.textContent=CaseMedia.progressText(value);if(bar&&value!=null)bar.value=value});clipSources.set(step.source,source)}
+    catch{if(active()){ui.querySelector('.media-loading').innerHTML='<p>网络暂时没连上，点一下重试。</p><button class="primary" id="retry-download">重新准备剧情</button>';ui.querySelector('#retry-download').onclick=()=>playClip(step)}return}
+  }
+  if(!active())return;
+  ui.querySelector('.media-loading')?.remove();still.hidden = true; video.hidden = false;
+  if(video.getAttribute('src')!==source){video.src=source;video.load()}else if(video.ended)video.currentTime=0;
   video.play().catch(() => {
+    if(!active())return;
     ui.insertAdjacentHTML('beforeend', '<section class="panel dialogue"><p>点一下继续播放剧情。</p><button class="primary" id="play-again" type="button">继续播放</button></section>');
     ui.querySelector('#play-again').onclick = () => { ui.querySelector('.dialogue')?.remove(); video.play(); };
   });
@@ -212,6 +219,8 @@ if (preview === 'official') {
 } else {
   backdrop(image.v2);
   ui.innerHTML = `${topbar('第二期 · 开始', '1/4')}<div class="spacer"></div><section class="panel start-panel"><div class="speaker">奶奶侦探 · ${seriesMode || demoMode ? '第二关' : '第二期'}</div><h2>手机自己去赶集</h2><p>在街道上帮周奶奶查清：陈阿姨的手机为什么会自己点击？</p><button class="primary" id="start" type="button">${preview === 'v02' ? '试听 V02 新配音' : '开始调查'}</button><div class="helper">${demoMode ? '独立预览，不记录通关 · ' : ''}四次关键判断；剧情会在选项处暂停</div></section>`;
-  primeVideo(preview === 'v02' ? scenes[1].source : scenes[0].source);
+  const openingSource=preview === 'v02' ? scenes[1].source : scenes[0].source;
+  const start=ui.querySelector('#start');start.disabled=true;const label=start.textContent;start.textContent='正在准备剧情…';
+  CaseMedia.url(openingSource,value=>{if(index===-1&&ui.querySelector('#start'))ui.querySelector('.helper').textContent=CaseMedia.progressText(value)}).then(source=>{clipSources.set(openingSource,source);if(ui.querySelector('#start')){start.disabled=false;start.textContent=label;ui.querySelector('.helper').textContent='剧情已准备好 · 四次关键判断时暂停'}}).catch(()=>{start.disabled=false;start.textContent='重试并开始调查'});
   bindHeader(); ui.querySelector('#start').onclick = () => { index = preview === 'v02' ? 0 : -1; next(); };
 }

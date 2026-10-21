@@ -17,7 +17,24 @@ const video=id=>'assets/video/'+id+'?v='+MEDIA_BUILD;
 let loopVideoWarmup=null;
 function warmLoopVideo(){
  if(loopVideoWarmup||navigator.connection?.saveData)return;
- loopVideoWarmup=fetch(video('L01.mp4'),{cache:'force-cache'}).then(response=>response.ok?response.arrayBuffer():Promise.reject()).catch(()=>null);
+ loopVideoWarmup=CaseMedia.warm(video('L01.mp4'));
+}
+const voiceBuffers=new Map();
+function unlockAudio(){
+ audioContext??=new(window.AudioContext||window.webkitAudioContext)();
+ audioContext.resume().catch(()=>{});
+ return audioContext;
+}
+function prepareVoice(take){
+ const path=voiceAsset(take);
+ if(!voiceBuffers.has(path))voiceBuffers.set(path,CaseMedia.blob(path).then(blob=>blob.arrayBuffer()).then(bytes=>unlockAudio().decodeAudioData(bytes)).catch(error=>{voiceBuffers.delete(path);throw error}));
+ return voiceBuffers.get(path);
+}
+function warmVoices(){
+ const stageIndex=F.stages.indexOf(state.stage),stages=F.stages.slice(Math.max(0,stageIndex),Math.max(0,stageIndex)+3);
+ const takes=stages.flatMap(stage=>STORY_VOICES[stage]||[]);
+ takes.push({role:'grandma',id:'observe-intro'},{role:'grandma',id:'observe-partial'},{role:'grandma',id:'observe-complete'});
+ for(const take of takes)prepareVoice(take).catch(()=>{});
 }
 const AUDIO_BUILD='20260921l';
 const STORY_VOICES={
@@ -50,17 +67,25 @@ function voiceForScene(){
  return queue.map((take,index)=>({...take,signature:`${state.stage}:${index}`})).find(take=>!playedVoiceSignatures.has(take.signature))||null;
 }
 function stopCharacterVoice(){
- voiceToken++;if(voiceAudio){voiceAudio.onended=voiceAudio.onerror=null;voiceAudio.pause();voiceAudio=null}
+ voiceToken++;if(voiceAudio){voiceAudio.onended=null;try{voiceAudio.stop()}catch{}voiceAudio=null}
  game.classList.remove('character-speaking');ui.querySelectorAll('.speaker.voice-active').forEach(el=>el.classList.remove('voice-active'));delete game.dataset.voiceSpeaker;voiceCaption.hidden=true;voiceCaption.textContent='';voiceCaption.removeAttribute('data-role');voiceCaption.removeAttribute('data-speaker');voiceCaption.removeAttribute('aria-label');
 }
 function playCharacterVoice(){
  const take=voiceForScene();if(!sound||!take||playedVoiceSignatures.has(take.signature))return false;
- stopCharacterVoice();clearTimeout(autoTimer);const my=voiceToken,a=new Audio(voiceAsset(take));voiceAudio=a;a.preload='auto';
+ stopCharacterVoice();clearTimeout(autoTimer);const my=voiceToken;game.dataset.voiceState='loading';warmVoices();
  const done=()=>{if(my!==voiceToken)return;voiceAudio=null;game.classList.remove('character-speaking');ui.querySelectorAll('.speaker.voice-active').forEach(el=>el.classList.remove('voice-active'));delete game.dataset.voiceSpeaker;voiceCaption.hidden=true;const linger=state.stage==='verify'?1400:state.stage==='result'?1200:450;autoTimer=setTimeout(()=>{if(!playCharacterVoice())scheduleAutoAdvance(linger)},260)};
- a.onended=done;a.onerror=()=>{console.warn(`${take.speaker}配音未能加载`,take.id);playedVoiceSignatures.add(take.signature);done()};
- voiceCaption.textContent=take.text;voiceCaption.dataset.role=take.role;voiceCaption.dataset.speaker=take.speaker;voiceCaption.setAttribute('aria-label',`${take.speaker}：${take.text}`);voiceCaption.hidden=false;game.classList.add('character-speaking');game.dataset.voiceSpeaker=take.speaker;
- [...ui.querySelectorAll('.speaker')].find(el=>el.textContent.includes(take.speaker)||(take.speaker==='陌生人'&&el.textContent.includes('陌生来电')))?.classList.add('voice-active');
- a.play().then(()=>playedVoiceSignatures.add(take.signature)).catch(()=>{stopCharacterVoice();scheduleAutoAdvance()});
+ prepareVoice(take).then(async buffer=>{
+  if(my!==voiceToken||!sound)return;
+  const context=unlockAudio();await context.resume();if(my!==voiceToken)return;
+  if(context.state!=='running')throw Error('声音需要点一下开启');
+  const source=context.createBufferSource();source.buffer=buffer;source.connect(context.destination);source.onended=()=>{game.dataset.voiceState='ended';done()};voiceAudio=source;
+  voiceCaption.textContent=take.text;voiceCaption.dataset.role=take.role;voiceCaption.dataset.speaker=take.speaker;voiceCaption.setAttribute('aria-label',`${take.speaker}：${take.text}`);voiceCaption.hidden=false;game.classList.add('character-speaking');game.dataset.voiceSpeaker=take.speaker;game.dataset.voiceState='playing';
+  source.start();playedVoiceSignatures.add(take.signature);
+ }).catch(error=>{
+  if(my!==voiceToken)return;game.dataset.voiceState='error';voiceCaption.textContent='配音暂未就绪，点一下继续。';voiceCaption.hidden=false;
+  modal('这句配音还没准备好。点一下重新加载，剧情会从当前这句继续。',button('继续播放配音','retry-voice'));
+  console.warn('配音准备失败',take.id,error.message);
+ });
  return true;
 }
 const ICONS={back:'<path d="m14 6-6 6 6 6"/>',sound:'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',muted:'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/>',help:'<circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.4 2.4 0 1 1 4.2 1.6c-1.5 1-1.9 1.2-1.9 2.7"/><path d="M12 16.5h.01"/>',check:'<path d="m5 12 4 4L19 6"/>',target:'<circle cx="12" cy="12" r="6.5"/><path d="M12 1v7m0 8v7M1 12h7m8 0h7"/>'};
@@ -82,7 +107,7 @@ function panel(speaker,text,label,action,extra=''){return `<div class="spacer"><
 /* 自动剧情只使用画面、配音和黑底字幕，不再叠加白色说明卡。 */
 const autoCue='';
 function autoPanel(){return ''}
-function header(title){return `<header class="topbar"><button class="icon-button" data-action="back" aria-label="${currentDetail?'返回现场':'打开暂停菜单'}">${icon('back')}</button><div class="header-chip"><span>第一关 · ${title}</span><span class="progress" aria-label="已调查 ${state.completed.length} 处，共 3 处">${state.completed.length}/3</span></div><button class="icon-button" data-action="sound" aria-pressed="${sound}" aria-label="${sound?'关闭':'开启'}声音">${icon(sound?'sound':'muted')}</button><button class="icon-button" data-action="help" aria-label="帮助">${icon('help')}</button></header>`}
+function header(title){return CaseChrome.header({title:'第一关 · '+title,progress:state.completed.length+'/3',progressLabel:`已调查 ${state.completed.length} 处，共 3 处`,sound,first:true})}
 function visual(id){if(id==='account')return `<div class="evidence-visual wood"><div class="notebook">转账金额：1,999 元<br>收款人：李某（个人账户）<br>备注：贷款解冻费</div></div>`;if(id==='shutter')return `<div class="evidence-visual"><img src="${art('06')}" alt="半落卷帘门"><div class="sign-info">营业时间　18:00—24:00<br>当前时间　22:17</div></div>`;return `<div class="evidence-visual"><img src="${art('16')}" alt="何叔手中的手机"><div class="phone-info">陌生号码 · 消息记录<br><div class="bubble">还剩 08:42，不要挂电话。</div><div class="bubble">不要回原 App，照我说的做。</div></div></div>`}
 function detailHTML(){const d=DATA[currentDetail.id],done=state.completed.includes(currentDetail.id),preview=false,correct=answer===d.right;
  return header('证据判断')+`<section class="panel evidence ${done?'evidence-complete':'evidence-judging'}"><div class="evidence-title"><span class="tag ${done?'done':''}">${done?'已调查':currentDetail.id==='account'?'收款便签':currentDetail.id==='shutter'?'卷帘门':'手机消息'}</span><div><small>${done?'线索回看':'发现线索 · 直接判断'}</small><h2>${done?'为什么要暂停？':currentDetail.id==='account'?'看清便签上的信息':currentDetail.id==='shutter'?'对照营业时间':'看看对方说了什么'}</h2></div></div>${visual(currentDetail.id)}${done?`<div class="feedback correct">判断依据<br>${d.reason}</div>${button('返回现场','close-detail',true)}`:`<p class="question">${d.question}</p>${d.options.map((v,i)=>`<button class="option ${answer===i?(correct?'selected-right':'selected-wrong'):''}" data-answer="${i}"${correct?' disabled':''}><b>${String.fromCharCode(65+i)}</b>${v}</button>`).join('')}${answer===null?'':`<div class="feedback ${correct?'correct':''}" role="status">${correct?'判断正确 · 已记下线索':d.wrong}</div>`}${correct?'<div class="auto-return">自动返回现场…</div>':'<button class="minor" data-action="close-detail">返回现场</button>'}`}</section>`;
@@ -98,7 +123,7 @@ function storyHTML(){switch(state.stage){
  case'lower':return `<div class="spacer"></div><section class="panel decision-panel crisis-panel"><div class="decision-status"><span>转账倒计时</span><strong>00:42</strong></div><h2>何叔已经把卡插进去了</h2><p>周奶奶现在该怎么做？</p><div class="decision-options"><button data-action="choose-listen"><b>继续听</b><span>对方也许能解释清楚</span></button><button data-action="choose-stop" class="danger-choice"><b>立即止损</b><span>挂断电话，取消并取回卡</span></button><button data-action="choose-wait"><b>先输金额</b><span>不点确认就不会有事</span></button></div>${decisionFeedback?`<div class="decision-feedback" role="status">${decisionFeedback}</div>`:''}</section>`;
  case'pause':return autoPanel('周奶奶','何叔，别转！先挂电话，把手离开确认键。');
  case'cancel':return autoPanel('风险已止','电话挂断，转账取消，银行卡也拿回来了。');
- case'verify':return state.verified?`<div class="spacer"></div><section class="panel brief-verify-panel"><div class="verify-heading"><span>核实完成</span><h2>电话里的两件事，都对不上</h2></div><div class="brief-check"><span>解冻费</span><b>电话说有</b><i>原记录没有</i></div><div class="brief-check"><span>收款账户</span><b>要求转个人账户</b><i>官方明确不会</i></div><div class="brief-verdict">判断成立：保持挂断，不转账。</div></section>`:`<div class="spacer"></div><section class="panel decision-panel verify-decision"><div class="decision-status"><span>电话已挂断</span><strong>继续核实</strong></div><h2>下一步从哪里查？</h2><p>选错入口，仍可能回到骗子的控制里。</p><div class="decision-options"><button data-action="verify-link"><b>短信里的链接</b><span>打开“客服处理页”</span></button><button data-action="verify-callback"><b>回拨刚才号码</b><span>再问一次解冻费</span></button><button data-action="verify-original" class="safe-choice"><b>原来的 App</b><span>查看申请记录和官方客服</span></button></div>${decisionFeedback?`<div class="decision-feedback" role="status">${decisionFeedback}</div>`:''}</section>`;
+ case'verify':return state.verified?`<div class="spacer"></div><article class="official-letter" aria-label="原申请平台官方核实回函"><div class="letterhead"><span class="letter-monogram" aria-hidden="true">函</span><div><div class="letter-sender">原申请平台 · 官方客户服务</div><div class="letter-type">申请事项核实回函</div></div></div><div class="letter-rule"></div><p class="letter-recipient">何先生：</p><p class="letter-conclusion">您的申请无待缴解冻费</p><p class="letter-body">经原申请入口核查，当前申请记录正常，未产生来电所述的 1,999 元“解冻费”。</p><dl class="letter-facts"><div><dt>待缴费用</dt><dd>未查询到解冻费</dd></div><div><dt>个人收款账户</dt><dd>非官方收费渠道</dd></div></dl><p class="letter-body">官方不会要求您向个人账户缴费。请保持挂断，勿按陌生来电指引转账。</p><div class="letter-signature"><span>原申请平台 · 官方客户服务</span><span class="letter-seal">已核实</span></div><button class="letter-next" data-action="official-read">已阅读回函，继续 <span aria-hidden="true">→</span></button></article>`:`<div class="spacer"></div><section class="panel decision-panel verify-decision"><div class="decision-status"><span>电话已挂断</span><strong>继续核实</strong></div><h2>下一步从哪里查？</h2><p>选错入口，仍可能回到骗子的控制里。</p><div class="decision-options"><button data-action="verify-link"><b>短信里的链接</b><span>打开“客服处理页”</span></button><button data-action="verify-callback"><b>回拨刚才号码</b><span>再问一次解冻费</span></button><button data-action="verify-original" class="safe-choice"><b>原来的 App</b><span>查看申请记录和官方客服</span></button></div>${decisionFeedback?`<div class="decision-feedback" role="status">${decisionFeedback}</div>`:''}</section>`;
  case'result':return `<div class="spacer"></div><section class="panel pass-panel"><div class="pass-kicker">过关判定</div><h2>你做对了两个关键决定</h2><div class="pass-list"><span>✓ 及时止损</span><span>✓ 取回银行卡</span><span>✓ 从原入口核实</span></div><strong>第一关通过</strong></section>`;
  case'finish':return `<div class="spacer"></div><section class="panel finish-panel"><div class="pass-badge" aria-hidden="true">✓</div><div class="speaker">窗外有事 · 第一关</div><h2>成功阻止可疑转账</h2><p>因为你完成了三步：</p><div class="finish-steps"><b>停手</b><span>→</span><b>取卡</b><span>→</span><b>原入口核实</b></div>${seriesMode?'<p class="series-unlocked">第二关「手机自己去赶集」已解锁</p>'+button('进入第二关','next-level')+'<button class="minor" data-action="series-map">返回关卡地图</button>':button('再玩一次','restart')}</section>`;
  }}
@@ -117,19 +142,20 @@ async function moveLensTo(id,open=true){const p=pos(DATA[id]),from={x:state.lens
 function clean(){clearInterval(hintTimer);clearTimeout(autoTimer);clearTimeout(toast.timer);document.querySelector('#toast').classList.remove('show');dragAbort?.abort();effects.innerHTML='';stopCharacterVoice();stopAnimations()}
 function scheduleAutoAdvance(delayOverride=null){
  clearTimeout(autoTimer);if(currentDetail||game.classList.contains('opening-active')||document.hidden)return;
- let next=AUTO[state.stage];if(state.stage==='observe'&&state.completed.length===3)next=['lower',1100];if(state.stage==='verify'&&state.verified)next=['result',3000];if(!next)return;
+ let next=AUTO[state.stage];if(state.stage==='observe'&&state.completed.length===3)next=['lower',1100];if(!next)return;
  const stage=state.stage,delay=delayOverride??(state.stage==='verify'?3000:reduced?Math.min(next[1],900):next[1]);autoTimer=setTimeout(()=>{if(!busy&&!currentDetail&&state.stage===stage&&!game.querySelector('dialog'))action(next[0])},delay);
 }
 async function render({transition='cut',focus=null}={}){
  const my=++token;busy=true;game.classList.add('busy');clean();
  const imageId=currentDetail?'03':SHOTS[state.stage][0],useLoop=state.stage==='observe'&&!currentDetail;let media,loopFallback=false;
  if(useLoop){
-  media=document.createElement('video');media.src=video('L01.mp4');media.poster=art('03');media.preload='metadata';media.loop=true;media.muted=true;media.playsInline=true;media.setAttribute('aria-label','何叔店内的三条可调查线索循环画面');
+  media=document.createElement('video');media.poster=art('03');media.preload='auto';media.loop=true;media.muted=true;media.playsInline=true;media.setAttribute('aria-label','何叔店内的三条可调查线索循环画面');
+  try{media.src=await CaseMedia.url(video('L01.mp4'))}catch{}
   try{await Promise.race([new Promise((resolve,reject)=>{if(media.readyState>=2)return resolve();media.addEventListener('loadeddata',resolve,{once:true});media.addEventListener('error',reject,{once:true});media.load()}),new Promise((_,reject)=>setTimeout(reject,15000))])}catch{media=new Image();media.src=art('03');try{await media.decode()}catch{}loopFallback=true}
  }else{media=new Image();media.src=art(imageId);try{await media.decode()}catch{if(my!==token)return;busy=false;game.classList.remove('busy');modal('这张图片暂时没能读到。进度保留，可以重试当前画面。',button('重新加载图片','retry-image')+'<button class="minor" data-action="restart">从头再玩</button>');return}}
  if(my!==token)return;
  const old=document.createElement('div');old.className='old-frame';if(scene.firstChild){old.innerHTML=scene.innerHTML;const prevPhoto=old.querySelector('.scene-photo'),currentPhoto=scene.querySelector('.scene-photo');if(prevPhoto&&currentPhoto)prevPhoto.style.transform=getComputedStyle(currentPhoto).transform;scene.querySelector('video')?.pause();const oldUI=ui.cloneNode(true);oldUI.removeAttribute('id');Object.assign(oldUI.style,{position:'absolute',inset:'0',display:'flex',flexDirection:'column',padding:'20px 13px 19px',gap:'12px'});old.appendChild(oldUI)}
- cover.replaceChildren(old);media.className='scene-photo'+(useLoop&&!loopFallback?' scene-video':'');if(media instanceof HTMLImageElement)media.alt=currentDetail?'调查现场':SHOTS[state.stage][1];scene.replaceChildren(media);scene.insertAdjacentHTML('beforeend','<div class="shade"></div>');if(media instanceof HTMLVideoElement&&!reduced)media.play().catch(()=>{});game.dataset.stage=state.stage;game.classList.toggle('has-evidence',Boolean(currentDetail));
+ cover.replaceChildren(old);media.className='scene-photo'+(useLoop&&!loopFallback?' scene-video':'');if(media instanceof HTMLImageElement)media.alt=currentDetail?'调查现场':SHOTS[state.stage][1];scene.replaceChildren(media);scene.insertAdjacentHTML('beforeend','<div class="shade"></div>');if(media instanceof HTMLVideoElement&&!reduced)media.play().catch(()=>{});game.dataset.stage=state.stage;game.classList.toggle('has-evidence',Boolean(currentDetail)||(state.stage==='verify'&&state.verified));
  game.classList.toggle('indoor',!['intro','message','observe'].includes(state.stage));
  ui.innerHTML=currentDetail?detailHTML():header(SHOTS[state.stage][1])+storyHTML();
  if(state.stage==='observe'&&!currentDetail)installObserve();else if(['intro','message'].includes(state.stage))effects.innerHTML='<div class="rain"></div>';
@@ -146,17 +172,19 @@ async function render({transition='cut',focus=null}={}){
   const focal={reaction:'56% 35%',pause:'52% 52%',cancel:'57% 55%',intro:'63% 38%'}[state.stage]||'50% 42%';media.style.transformOrigin=focal;play(media,[{transform:'scale(1)'},{transform:'scale(1.045)'}],3000,{easing:'ease-out'});
  }
  if(loopFallback)toast('调查循环未能加载，已切换为静态画面。');
- save();markSeriesComplete();preloadNext();if(!playCharacterVoice())scheduleAutoAdvance();return true;
+ save();markSeriesComplete();preloadNext();if(!game.classList.contains('opening-active')&&!playCharacterVoice())scheduleAutoAdvance();return true;
 }
 function preloadNext(){const i=F.stages.indexOf(state.stage);for(const s of F.stages.slice(i+1,i+3)){const im=new Image();im.src=art(SHOTS[s][0])}}
 async function go(to,transition='cut'){currentDetail=null;answer=null;decisionFeedback=null;state=F.advance(state,to);await render({transition});if(!['intro','message'].includes(to))stopRain()}
 async function openDetail(id){if(busy||currentDetail)return;currentDetail={id,mode:state.completed.includes(id)?'done':'judge'};answer=null;beep();await render({transition:'focus',focus:pos(DATA[id])})}
 function modal(text,actions='<button class="primary" data-action="close-modal">知道了</button>'){clearTimeout(autoTimer);game.querySelector('dialog')?.remove();const d=document.createElement('dialog');d.innerHTML=`<p>${text}</p>${actions}`;game.appendChild(d);d.showModal()}
 async function action(a){
+ if(a==='retry-voice'){unlockAudio();game.querySelector('dialog')?.remove();playCharacterVoice();return}
+ if(a==='official-read'){stopCharacterVoice();await go('result');return}
  if(a==='close-modal'){game.querySelector('dialog')?.close();game.querySelector('dialog')?.remove();scheduleAutoAdvance();return}
  if(busy)return;
  switch(a){
- case'next-level':location.assign('../second/index.html?series=1');return;
+ case'next-level':location.assign('../second/index.html?series=1&v=20261021-playback2');return;
  case'series-map':location.assign('../index.html');return;
  case'restart':game.querySelector('dialog')?.remove();state=F.fresh();playedVoiceSignatures.clear();try{localStorage.removeItem(KEY)}catch{}await startPrologue();return;
  case'retry-image':game.querySelector('dialog')?.remove();await render();return;
@@ -172,7 +200,7 @@ async function action(a){
  case'judge':currentDetail.mode='judge';await render({transition:'focus'});return;
  case'submit':if(currentDetail&&answer===DATA[currentDetail.id].right){const completedId=currentDetail.id;state=F.submit(state,completedId,true);const p=pos(DATA[completedId]);currentDetail=null;answer=null;await render({transition:'focus',focus:p});beep();const next=F.clues.find(id=>!state.completed.includes(id));if(next){await moveLensTo(next,false);ui.querySelector(`[data-clue="${next}"]`)?.classList.add('hint')}}return;
  case'close-detail':currentDetail=null;answer=null;await render();return;
- case'sound':sound=!sound;beep();const b=ui.querySelector('[data-action="sound"]');b.innerHTML=icon(sound?'sound':'muted');b.setAttribute('aria-pressed',String(sound));b.setAttribute('aria-label',(sound?'关闭':'开启')+'声音');if(!sound){stopRain();stopCharacterVoice();scheduleAutoAdvance()}else{if(['intro','message'].includes(state.stage))syncRain();if(!playCharacterVoice())scheduleAutoAdvance()}toast(sound?'声音已开启':'声音已关闭');return;
+ case'sound':sound=!sound;beep();const b=ui.querySelector('[data-action="sound"]');b.innerHTML=icon(sound?'sound':'muted');b.setAttribute('aria-pressed',String(sound));b.setAttribute('aria-label',(sound?'关闭':'开启')+'声音');if(!sound){stopRain();stopCharacterVoice();scheduleAutoAdvance()}else{unlockAudio();if(['intro','message'].includes(state.stage))syncRain();if(!playCharacterVoice())scheduleAutoAdvance()}toast(sound?'声音已开启':'声音已关闭');return;
  case'help':if(state.stage==='observe'&&!currentDetail){const id=F.clues.find(x=>!state.completed.includes(x));if(id){await moveLensTo(id,false);toast('点击镜片中心附近的目标，即可查看。')}else toast('三处都已调查，剧情会自动继续。')}else if(state.stage==='lower')modal('此刻要先切断骗子的持续施压，并让何叔停止操作、取回银行卡。');else if(state.stage==='verify'&&!state.verified)modal('核实要与陌生来电完全隔离。回到原来的申请入口，或主动查找官方客服。');else modal('前半段剧情自动播放；调查线索和两个关键决定由你完成。');return;
  case'back':if(currentDetail){await action('close-detail');return}modal('进度已保存在此浏览器。你可以继续体验，或从开场重新开始。',button('继续体验','close-modal',true)+'<button class="minor" data-action="restart">从头再玩</button>'+(seriesMode?'<button class="minor" data-action="series-map">返回关卡地图</button>':''));return;
  default:if(F.stages.includes(a))await go(a,a==='observe'?'iris':['lower','pause'].includes(a)?'travel':a==='reaction'?'focus':'cut');
@@ -183,7 +211,7 @@ document.querySelector('#to-observe').onclick=async()=>{if(busy)return;sound=tru
 function setReduced(){game.classList.toggle('reduced',reduced);document.querySelector('#motion').textContent='减弱动画：'+(reduced?'开':'关');document.querySelector('#motion').setAttribute('aria-pressed',String(reduced));const loop=scene.querySelector('.scene-video');if(reduced){stopAnimations();loop?.pause()}else loop?.play().catch(()=>{})}
 document.querySelector('#motion').onclick=()=>{reduced=!reduced;setReduced()};setReduced();
 window.addEventListener('resize',()=>{if(state.stage==='observe'&&!currentDetail&&!busy)render()});
-document.addEventListener('visibilitychange',()=>{const loop=scene.querySelector('.scene-video');if(document.hidden){clearTimeout(autoTimer);stopAnimations();loop?.pause();voiceAudio?.pause();if(!prologue.active)save();audioContext?.suspend()}else{if(sound)audioContext?.resume();if(!reduced)loop?.play().catch(()=>{});if(voiceAudio&&sound)voiceAudio.play().catch(()=>scheduleAutoAdvance());else if(!playCharacterVoice())scheduleAutoAdvance()}});
+document.addEventListener('visibilitychange',()=>{const loop=scene.querySelector('.scene-video');if(document.hidden){clearTimeout(autoTimer);stopAnimations();loop?.pause();if(!prologue.active)save();audioContext?.suspend()}else{if(sound)audioContext?.resume();if(!reduced)loop?.play().catch(()=>{});if(!prologue.active&&!voiceAudio&&!playCharacterVoice())scheduleAutoAdvance()}});
 let rainSource=null,rainGain=null;
 function stopRain(){if(rainSource){try{rainSource.stop()}catch{}rainSource.disconnect();rainSource=null;rainGain?.disconnect();rainGain=null}}
 function syncRain(){if(!sound){stopRain();return}if(rainSource)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();audioContext.resume();const buffer=audioContext.createBuffer(1,audioContext.sampleRate*2,audioContext.sampleRate),data=buffer.getChannelData(0);let previous=0;for(let i=0;i<data.length;i++){previous=(previous+.03*(Math.random()*2-1))/1.03;data[i]=previous*2.8}rainSource=audioContext.createBufferSource();rainSource.buffer=buffer;rainSource.loop=true;rainGain=audioContext.createGain();rainGain.gain.value=.12;rainSource.connect(rainGain);rainGain.connect(audioContext.destination);rainSource.start()}catch{}}
@@ -192,7 +220,7 @@ const prologue=new CasePrologue({host:document.querySelector('#prologue'),isRedu
  revealCase:()=>{ui.hidden=false;game.classList.remove('opening-active');syncRain();document.querySelector('#debug').textContent=SHOTS[state.stage][1];if(!voiceAudio&&!playCharacterVoice())scheduleAutoAdvance()},
  onShopVisible:()=>beep('message'),
  toggleSound:()=>{sound=!sound;return sound},
- ensureSound:()=>{sound=true;return sound},
+ ensureSound:()=>{sound=true;unlockAudio();warmVoices();return sound},
  onPhase:phase=>{if(phase==='playing')warmLoopVideo();if(phase!=='idle')document.querySelector('#debug').textContent=({loading:'开场 · 准备视频',ready:'V01 · 等待播放',playing:'V01 · 周奶奶自我介绍',complete:'V01 · 播放完成',entering:'进入第一关',chapter:'第一关 · 窗外有事',error:'开场 · 静帧回退'})[phase]||phase}
 });
 async function startPrologue(){token++;clean();stopRain();busy=false;game.classList.remove('busy');game.classList.add('opening-active');ui.hidden=true;currentDetail=null;answer=null;await prologue.start({sound})}
