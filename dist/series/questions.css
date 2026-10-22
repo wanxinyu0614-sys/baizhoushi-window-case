@@ -1,0 +1,9 @@
+/* A solved question stays visible until the same explicit next action in either chapter. */
+#game .question-continue{display:block;flex-shrink:0;width:100%;min-height:46px;margin-top:10px;padding:10px 12px;border:2px solid #57472f;border-radius:10px;background:#b65b2c;color:#fff8e7;font-size:14px;font-weight:700;text-align:center}
+#game .question-continue[hidden]{display:none}
+#game .question-continue:active{background:#9e4c23}
+#game .decision-feedback.correct{background:#dce9d1;color:#36553f}
+#game .decision-options .selected-right{background:#d7e7cf;border-color:#587b60}
+#game .decision-options button:disabled{opacity:1;cursor:default}
+#game .evidence>.feedback{flex-shrink:0}
+#game .evidence{overflow-y:auto}

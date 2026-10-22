@@ -8,7 +8,7 @@ function markSeriesComplete() {
   if (!seriesMode) return;
   try { const prior = JSON.parse(localStorage.getItem(seriesKey)) || {}; if (prior.level1 === true) localStorage.setItem(seriesKey, JSON.stringify({ ...prior, level2: true })); } catch {}
 }
-function returnToSeries() { location.assign('../index.html?v=20261021-caption-bottom1'); }
+function returnToSeries() { location.assign('../index.html?v=20261022-question-rule1'); }
 const video = document.querySelector('#clip');
 const still = document.querySelector('#still');
 const insert = document.querySelector('#stop-insert');
@@ -79,9 +79,9 @@ function prefetchNextClip(fromIndex) {
 }
 const questions = {
   first: { title: '第一关 · 处置', progress: '1/4', tag: '现场', kicker: '手已拦住 · 选择下一步', heading: '手机还在自己点', picture: image.v2, note: '陈阿姨想点停手机，奶奶已经拦住她的手。', question: '接下来怎么处理？', options: ['继续在手机上点停', '断开网络', '回拨陌生客服'], answer: 1, feedback: '已断网。先阻断异常点击，再查原因。' },
-  permission: { title: '第二关 · 判断', progress: '2/4', tag: '贴膜', heading: '贴膜摊哪里不对劲？', picture: image.k08, note: '陈阿姨只去贴膜，手机却被拿走，还多了陌生软件和控制权限。', question: '最该警惕哪一步？', options: ['贴膜用了几分钟', '送了一张优惠券', '擅自装软件、开控制权限'], answer: 2, feedback: '贴膜不需要装陌生软件，更不需要控制手机。', autoAdvance: true },
+  permission: { title: '第二关 · 判断', progress: '2/4', tag: '贴膜', heading: '贴膜摊哪里不对劲？', picture: image.k08, note: '陈阿姨只去贴膜，手机却被拿走，还多了陌生软件和控制权限。', question: '最该警惕哪一步？', options: ['贴膜用了几分钟', '送了一张优惠券', '擅自装软件、开控制权限'], answer: 2, feedback: '贴膜不需要装陌生软件，更不需要控制手机。' },
   deduce: { title: '第三关 · 推理', progress: '3/4', tag: '推理', heading: '补上最后一格', picture: image.k10, note: '手机交给摊主 → 装了陌生软件 → 打开控制权限。', question: '陈阿姨没碰，谁在点？', options: ['手机坏了', '自动更新', '另一端有人远程控制'], answer: 2, feedback: '证据指向另一端有人远程控制手机。' },
-  code: { title: '第四关 · 截停', progress: '4/4', tag: '截停', heading: '验证码最后一道门', picture: image.k12, note: '陌生客服让陈阿姨念出验证码，声称能“撤回”。', question: '奶奶拦下后，该选哪一步？', options: ['报给对方，好撤回', '在原手机回拨客服', '拒绝报出，换设备核实'], answer: 2, feedback: '一个数字都不说，换设备找银行官方渠道核实。', autoAdvance: true },
+  code: { title: '第四关 · 截停', progress: '4/4', tag: '截停', heading: '验证码最后一道门', picture: image.k12, note: '陌生客服让陈阿姨念出验证码，声称能“撤回”。', question: '奶奶拦下后，该选哪一步？', options: ['报给对方，好撤回', '在原手机回拨客服', '拒绝报出，换设备核实'], answer: 2, feedback: '一个数字都不说，换设备找银行官方渠道核实。' },
 };
 let index = -1;
 let muted = false;
@@ -113,7 +113,7 @@ function bindHeader() {
     if (seriesMode || demoMode) ui.querySelector('#series-map').onclick = returnToSeries;
   });
   ui.querySelector('#sound-control')?.addEventListener('click', () => { muted = !muted; video.muted = muted; const b = ui.querySelector('#sound-control'); b.innerHTML = CaseChrome.icon(muted ? 'muted' : 'sound'); b.setAttribute('aria-label', muted ? '开启声音' : '关闭声音'); b.setAttribute('aria-pressed',String(!muted)); });
-  ui.querySelector('#help-control')?.addEventListener('click', () => showToast('答题时画面会暂停；贴膜和验证码判断答对后自动继续。'));
+  ui.querySelector('#help-control')?.addEventListener('click', () => showToast('答题时画面会暂停；答错可重选，答对后点“继续剧情”。'));
 }
 function resumeFromPause() {
   menuOpen = false;
@@ -172,7 +172,7 @@ function showQuestion(id) {
     <div class="evidence-title"><span class="tag">${q.tag}</span><div><small>${escapeHtml(q.kicker || '发现线索 · 直接判断')}</small><h2>${q.heading}</h2></div></div>
     <div class="evidence-visual"><img src="${q.picture}" alt="${q.heading}"><div class="inset-note">${q.note}</div></div>
     <p class="question">${q.question}</p><div class="choice-wrap">${opts}</div>
-    <div id="feedback" aria-live="polite"></div><button class="primary" id="advance" type="button" hidden>继续剧情</button>
+    <div id="feedback" aria-live="polite"></div><button class="primary question-continue" id="advance" type="button" hidden>继续剧情</button>
   </section>`;
   bindHeader();
   ui.querySelectorAll('[data-answer]').forEach(button => button.addEventListener('click', () => {
@@ -181,8 +181,7 @@ function showQuestion(id) {
     ui.querySelector('#feedback').innerHTML = `<div class="feedback ${ok ? 'correct' : ''}">${ok ? `判断正确 · ${q.feedback}` : '再想想，回到刚才的线索。'}</div>`;
     if (ok) {
       ui.querySelectorAll('[data-answer]').forEach(b => b.disabled = true);
-      if (q.autoAdvance) stillTimer = setTimeout(next, 1700);
-      else { const advance = ui.querySelector('#advance'); advance.hidden = false; advance.onclick = next; }
+      const advance = ui.querySelector('#advance'); advance.hidden = false; advance.onclick = next;
     }
   }));
 }

@@ -1,6 +1,6 @@
 const SERIES_KEY = 'grandma-detective-series-v1';
 const MEDIA_BUILD = '20261021-hqpreload1';
-const APP_BUILD = '20261021-caption-bottom1';
+const APP_BUILD = '20261022-question-rule1';
 const secondUrl = './second/index.html?series=1&v=' + APP_BUILD;
 const warmedRoutes = new Set();
 function warmRouteVideo() {
