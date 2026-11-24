@@ -82,7 +82,6 @@ const scenes = [
 
 const stillCache = new Map();
 const videoCache = new Map();
-const videoLoads = new Map();
 let mediaLoad, activeVideo = $('video'), stillAnimation;
 function seekVideo(video, seconds) {
   if (Math.abs(video.currentTime-seconds) < .02) return Promise.resolve();
@@ -102,30 +101,22 @@ function ensureMedia() {
     const img = new Image(); img.src = frame(name); stillCache.set(name,img);
     return img.decode().catch(() => { throw new Error(`图片加载失败：${name}`); });
   });
-  ['intro','outro','memory','phone'].forEach(name => {
-    const video = document.createElement('video');
-    video.className = 'media'; video.muted = name === 'phone' || !soundEnabled; video.playsInline = true;
-    video.loop = name === 'phone';
-    video.dataset.segment = name;
-    video.preload = 'auto'; video.style.display = 'none';
-    video.addEventListener('timeupdate',() => {
-      if (video !== activeVideo || !['scene','paused'].includes(phase)) return;
-      const base = name === 'intro' ? 0 : name === 'outro' ? 9 : 14;
-      const elapsed = base + video.currentTime;
-      $('progressBar').style.width = `${Math.min(100,elapsed / 48 * 100)}%`;
-    });
-    $('still').parentElement.insertBefore(video,$('still'));
-    videoCache.set(name,video);
-    const ready = new Promise((resolve,reject) => {
-      video.addEventListener('loadeddata',resolve,{once:true});
-      video.addEventListener('error',() => reject(new Error(`视频加载失败：${name}`)),{once:true});
-      video.src = videoFile(name); video.load();
-    });
-    videoLoads.set(name,ready);
-    ready.catch(() => {});
+  // Reuse the same video element across cuts so iOS keeps the playback
+  // permission granted by the first Start tap.
+  const video = $('video');
+  video.preload = 'none';
+  video.style.display = 'none';
+  video.addEventListener('timeupdate',() => {
+    if (video !== activeVideo || !['scene','paused'].includes(phase)) return;
+    const name = video.dataset.segment;
+    const base = name === 'intro' ? 0 : name === 'outro' ? 9 : 14;
+    const elapsed = base + video.currentTime;
+    $('progressBar').style.width = `${Math.min(100,elapsed / 48 * 100)}%`;
   });
-  // The opening can start as soon as its own video and poster are ready.
-  mediaLoad = Promise.all([...images,videoLoads.get('intro'),loadInteractionArt()]);
+  ['intro','outro','memory','phone'].forEach(name => videoCache.set(name,video));
+  // Images can load in the background. Mobile browsers may not fetch a video
+  // until play() is called from the user's tap, even with preload="auto".
+  mediaLoad = Promise.all([...images,loadInteractionArt()]);
   return mediaLoad;
 }
 
@@ -397,12 +388,11 @@ function scheduleCues(cues, currentRun, partStart) {
     });
   }
 }
-async function showStill(name, seconds = 0) {
+function showStill(name, seconds = 0) {
   const el = $('still');
   const src = frame(name);
   if (!stillCache.has(name)) {
     const img = new Image(); img.src = src; stillCache.set(name,img);
-    await img.decode();
   }
   if (el.getAttribute('src') !== src) el.src = src;
   activeVideo.pause(); activeVideo.style.display = 'none';
@@ -414,15 +404,26 @@ async function showStill(name, seconds = 0) {
 }
 async function beginSequence(name, poster, currentRun, start = 0) {
   const v = videoCache.get(name);
-  await videoLoads.get(name);
-  if (name !== 'memory') await showStill(poster);
-  if (currentRun !== runId) return false;
-  await seekVideo(v,start);
+  if (name !== 'memory') showStill(poster);
   if (currentRun !== runId) return false;
   activeVideo = v;
   v.style.transform = '';
   v.style.display = 'block';
-  try { await v.play(); }
+  v.loop = name === 'phone';
+  v.muted = name === 'phone' || !soundEnabled;
+  if (v.dataset.segment !== name) {
+    v.dataset.segment = name;
+    v.src = videoFile(name);
+  }
+  // Start playback before the first await, while the tap still grants audio.
+  const playback = v.play();
+  try {
+    await Promise.race([
+      playback,
+      new Promise((_,reject) => setTimeout(() => reject(new Error('视频启动超时')),12000))
+    ]);
+    if (start > 0) await seekVideo(v,start);
+  }
   catch {
     phase = 'autoplay-blocked';
     $('resumePanel').hidden = false;
@@ -435,6 +436,7 @@ async function beginSequence(name, poster, currentRun, start = 0) {
   ]);
   if (currentRun !== runId) return false;
   $('still').style.display = 'none';
+  if (name === 'memory') $('bridge').hidden = true;
   return true;
 }
 async function playPart(part, currentRun, cues) {
@@ -498,15 +500,9 @@ async function playBridge(currentRun) {
   if (currentRun !== runId) return;
   await pause(900,currentRun);
   if (currentRun !== runId) return;
-  const memory = videoCache.get('memory');
-  await videoLoads.get('memory');
-  await seekVideo(memory,0);
   if (currentRun !== runId) return;
   activeVideo.pause();
   activeVideo.style.display = 'none';
-  memory.style.display = 'block';
-  $('still').style.display = 'none';
-  $('bridge').hidden = true;
   phase = 'flashback';
 }
 async function beginInteraction(currentRun) {
@@ -539,8 +535,10 @@ async function beginPhoneStep(currentRun) {
   setInfo(''); setTag(''); setCaption();
   const phone = videoCache.get('phone');
   try {
-    await videoLoads.get('phone');
-    await seekVideo(phone,0);
+    activeVideo.pause();
+    phone.dataset.segment = 'phone';
+    phone.loop = true;
+    phone.src = videoFile('phone');
     if (currentRun !== runId) return;
     phone.muted = true;
     await phone.play();
@@ -557,7 +555,6 @@ async function beginPhoneStep(currentRun) {
     return;
   }
   if (currentRun !== runId) return;
-  activeVideo.pause(); activeVideo.style.display = 'none';
   activeVideo = phone;
   phone.style.display = 'block';
   $('still').style.display = 'none';
@@ -619,7 +616,7 @@ function beginNotice(currentRun) {
     if (currentRun === runId) { $('notice').dataset.reading = ''; setCaption(); }
   })();
 }
-async function restart() {
+function restart() {
   runId++; clearTimers();
   pendingAutoplayResolve = null;
   const startButton = $('startButton');
@@ -635,23 +632,18 @@ async function restart() {
   draggingArm = false; interactionProgress = 0;
   setInfo(''); setTag(''); setCaption();
   const currentRun = runId;
-  try {
-    await audioContext.resume();
-    await Promise.all([ensureVoices(),ensureMedia()]);
-    await Promise.all([...videoCache.values()].map(video => {
-      video.getAnimations().forEach(animation => animation.cancel());
-      video.style.transform = '';
-      return seekVideo(video,0);
-    }));
-    document.body.dataset.audioState = audioContext.state;
+  audioContext.resume().catch(() => {});
+  ensureVoices().then(() => {
     document.body.dataset.loadedVoices = String(voiceBuffers.size);
-  } catch (error) {
-    startButton.disabled = false;
-    startButton.textContent = '重试播放';
-    $('startPanel').hidden = false;
-    $('startPanel').querySelector('p').textContent = error.message || '视频或配音加载失败，请重试。';
-    return;
+  }).catch(error => { document.body.dataset.voiceError = error.message; });
+  ensureMedia().catch(error => { document.body.dataset.mediaError = error.message; });
+  for (const video of new Set(videoCache.values())) {
+    video.pause();
+    video.getAnimations().forEach(animation => animation.cancel());
+    video.style.transform = '';
+    if (video.readyState) { try { video.currentTime = 0; } catch {} }
   }
+  document.body.dataset.audioState = audioContext.state;
   if (currentRun !== runId) return;
   $('startPanel').hidden = true;
   startButton.disabled = false;
@@ -691,7 +683,7 @@ $('resumeButton').onclick = resumePlayback;
 $('soundButton').onclick = () => {
   soundEnabled = !soundEnabled;
   masterGain.gain.value = soundEnabled ? 1 : 0;
-  for (const [name,video] of videoCache) video.muted = name === 'phone' || !soundEnabled;
+  activeVideo.muted = activeVideo.dataset.segment === 'phone' || !soundEnabled;
   $('soundButton').setAttribute('aria-pressed',String(soundEnabled));
   $('soundButton').setAttribute('aria-label',soundEnabled ? '关闭声音' : '开启声音');
   $('soundButton').querySelector('svg').innerHTML = soundEnabled
@@ -749,5 +741,4 @@ $('interactionCanvas').addEventListener('keydown', e => {
   if (e.key==='Escape') { e.preventDefault(); setInteractionProgress(0); }
 });
 
-// Decode all small stills and warm each video before the user reaches a cut.
-ensureMedia().catch(() => {});
+// Keep the opening video unloaded until the user taps Start.
