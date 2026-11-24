@@ -1,0 +1,106 @@
+/* Content overlays for the 50-second video edition. */
+.topbar,.progress{display:none!important}
+
+/* A: show a familiar mobile transfer page, without claiming a specific bank. */
+.info{z-index:8;top:40px;width:min(78%,308px);padding:0;border:0;border-radius:14px;background:#f8fafb;color:#18222d;box-shadow:0 14px 36px #0008;overflow:hidden;visibility:hidden}
+.info.on{visibility:visible}
+.transfer-top{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #e3e8ec;color:#17212b;background:#fff;font-size:13px}
+.transfer-top span{font-size:21px;line-height:1;color:#52606c}
+.transfer-top b{font-size:13px;font-weight:650}
+.transfer-status{display:flex;align-items:center;gap:6px;margin:8px 12px 6px;color:#b53f31;font-size:11px;font-weight:700}
+.transfer-status i{width:7px;height:7px;border-radius:50%;background:#d84c3a;box-shadow:0 0 0 3px #d84c3a22}
+.info small{display:block;margin:0 12px;color:#7d8892;font-size:11px}
+.info strong{display:block;margin:1px 12px 5px;color:#17212b;font-size:25px;font-weight:750;font-variant-numeric:tabular-nums}
+.info .confirm{display:block;margin:9px 12px 10px;padding:8px;border:0;border-radius:7px;background:#1677e9;color:#fff;text-align:center;font-size:12px;font-weight:650}
+.transfer-success{display:none;min-height:130px;padding:14px 10px 16px;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center}
+.transfer-success b{color:#17212b;font-size:17px;font-weight:750}
+.transfer-success>span:last-child{color:#52606c;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums}
+.success-check{display:grid;place-items:center;width:38px;height:38px;margin-bottom:2px;border-radius:50%;background:#1677e9;color:#fff;box-shadow:0 0 0 5px #1677e917}
+.success-check svg{width:25px;height:25px}
+.info.sent .transfer-status,.info.sent small,.info.sent strong,.info.sent .confirm{display:none}
+.info.sent .transfer-success{display:flex}
+.info.sent{width:min(92%,360px)}
+/* C: show a native-style notification without a full-width frosted strip. */
+.device-alert{position:absolute;z-index:9;top:40px;left:0;right:0;display:none;padding:0 13px;background:none;pointer-events:none}
+.device-alert.on{display:block}
+.device-alert-card{padding:13px 15px;border-radius:17px;background:#f9fafd;color:#17212b;box-shadow:0 8px 25px #0004;border:1px solid #ffffffd9}
+.device-alert-heading{display:flex;align-items:center;gap:7px;color:#4c5861;font-size:12px}
+.device-alert-heading b{font-weight:650}
+.device-alert-heading time{margin-left:auto;font-size:11px;color:#82909a}
+.device-alert-icon{width:26px;height:26px;flex:0 0 26px;display:grid;place-items:center;border-radius:7px;background:#4d78aa;color:#fff}
+.device-alert-icon svg{width:18px;height:18px;display:block}
+.device-alert-card p{margin:11px 0 0;color:#17212b;font-size:16px;font-weight:700;line-height:1.35}
+.device-alert-action{display:block;margin-top:10px;color:#64717c;font-size:12px;line-height:1.35}
+
+/* Single drag: phone proportions, shutdown control placement, and a moving hand. */
+.off{padding:0;background:radial-gradient(circle at 50% 28%,#31353b,#111317 72%)}
+.off .phone{position:absolute;top:50%;bottom:auto;left:50%;width:min(84%,300px);height:auto;max-height:none;aspect-ratio:9/16;transform:translate(-50%,-50%);padding:0 17px;display:block;border:8px solid #1a1c21;border-radius:39px;background:linear-gradient(155deg,#34363d,#1a1c22 72%);box-shadow:0 20px 42px #0009,inset 0 0 0 2px #54565d}
+.off .phone:before{top:10px;width:73px;height:15px;background:#111216}
+.phone-status{position:absolute;top:18px;left:20px;right:20px;display:flex;justify-content:space-between;color:#f1f2f4;font-size:11px;font-weight:700;letter-spacing:.02em}
+.phone-status span:last-child{font-size:9px}
+.slider{height:58px;margin-top:74px;border:1px solid #ffffff1f;background:#3a3d44d9;box-shadow:0 1px 8px #0006}
+.slider .label{justify-items:start;padding-left:62px;color:#f5f5f7;font-size:14px;font-weight:500}
+.slider .fill{background:#66697280}
+.thumb{display:grid;place-items:center;background:#f6f6f7;box-shadow:0 2px 6px #0006}
+.thumb svg{width:24px;height:24px;display:block;color:#d63b3d}
+.gesture{position:absolute;top:149px;left:20px;display:flex;flex-direction:column;align-items:center;gap:0;pointer-events:none;color:#fff7df;font-size:11px;text-shadow:0 2px 6px #000;animation:gesture-slide 1.55s ease-in-out infinite}
+.gesture svg{width:37px;height:48px;filter:drop-shadow(0 3px 5px #0006)}
+.off.is-dragging .gesture,.off.done .gesture{display:none}
+@keyframes gesture-slide{0%,13%{transform:translateX(0);opacity:0}22%{opacity:1}72%{transform:translateX(75px);opacity:1}92%,100%{transform:translateX(87px);opacity:0}}
+.phone-bottom{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:86px;height:4px;border-radius:99px;background:#f0f0f2a8}
+.off .timer{position:absolute;top:7%;bottom:auto;left:12px;right:12px;text-align:center;color:#f0f1f3;font-size:13px}
+.phone.dark .phone-status,.phone.dark .gesture{opacity:0}
+
+.bridge{position:absolute;z-index:10;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:34px;padding:24px;background:linear-gradient(#0b1c17b8,#0b1c17e8);color:#fff8e6;text-align:center}
+.bridge.on{display:flex}
+.bridge-questions{color:#fff9e8;font-size:18px;font-weight:700;line-height:1.75;text-shadow:0 2px 8px #0b1712}
+.bridge-questions span{display:block}
+.bridge.on .bridge-questions span:nth-child(2){animation:bridge-second-question 6.7s ease-out both}
+@keyframes bridge-second-question{0%,29%{opacity:0;transform:translateY(7px)}36%,100%{opacity:1;transform:translateY(0)}}
+.bridge-time{display:flex;align-items:center;flex-direction:column;gap:7px}
+.bridge.on .bridge-time{animation:flashback-time-in 6.7s ease-out both}
+.bridge-time span{color:#e5d9af;font-size:14px;font-weight:700;letter-spacing:.15em}
+.bridge-time strong{font-family:"Songti SC",serif;color:#f7cf73;font-size:43px;line-height:1.2;font-weight:800;letter-spacing:.06em;text-shadow:0 2px 12px #08130e}
+@keyframes flashback-time-in{0%,75%{opacity:0;transform:translateY(12px) scale(.94)}82%,100%{opacity:1;transform:translateY(0) scale(1)}}
+.flashback-tag{position:absolute;z-index:8;top:26px;left:18px;display:none;padding:8px 12px;border:1px solid #e4d5aa;border-radius:7px;background:#1b3028e8;color:#fff5d8;font-size:14px;font-weight:700;letter-spacing:.05em;box-shadow:0 3px 10px #0005;pointer-events:none}
+.flashback-tag.on{display:block}
+
+/* Resolve the flashback on the connected-phone shot itself. */
+.media.resolve-hold{animation:resolve-zoom 5s ease-out forwards}
+@keyframes resolve-zoom{from{transform:scale(1)}to{transform:scale(1.035)}}
+.resolve{position:absolute;z-index:10;inset:0;display:none;align-items:flex-end;justify-content:center;padding:0 22px 70px;background:linear-gradient(transparent 42%,#0b1d18e8 100%);color:#fff9e9;text-align:center;pointer-events:none}
+.resolve.on{display:flex;animation:recap-reveal .25s ease-out}
+.resolve p{margin:0;font-family:"Songti SC",serif;font-size:22px;font-weight:700;line-height:1.55;text-shadow:0 2px 8px #07150f}
+@keyframes recap-reveal{from{opacity:0}to{opacity:1}}
+
+/* The final advice is recorded on Grandma's detective notebook. */
+.notice{position:absolute;z-index:10;inset:0;display:none;align-items:center;justify-content:center;padding:30px 18px 90px;background:radial-gradient(ellipse at 50% 38%,#31503e,#0b211b 74%)}
+.notice.on{display:flex;animation:recap-reveal .25s ease-out}
+.notice-paper.detective-notebook{position:relative;width:100%;max-width:355px;min-height:312px;padding:25px 21px 22px 34px;border:1px solid #c8bea9;border-left:8px solid #41624d;border-radius:6px 11px 11px 6px;background:linear-gradient(90deg,#eee8d8 0 19px,#fffdf5 19px,#f8f4e8 100%);color:#343f38;box-shadow:3px 3px 0 #e2dac8,6px 7px 0 #bcb19a,0 22px 36px #0005}
+.notice-paper.detective-notebook::before{content:"";position:absolute;left:19px;top:0;bottom:0;width:1px;background:#baaF9680;box-shadow:2px 0 #fff9;pointer-events:none}
+.notice-paper.detective-notebook::after{content:"";position:absolute;right:0;bottom:0;width:0;height:0;border-style:solid;border-width:0 0 17px 17px;border-color:transparent transparent #e3d9c1 transparent;filter:drop-shadow(-1px -1px 0 #bfb49d);pointer-events:none}
+.notebook-rings{position:absolute;z-index:2;left:-14px;top:20px;bottom:20px;width:22px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+.notebook-rings i{position:relative;display:block;width:21px;height:14px;border:3px solid #9daa9f;border-radius:50%;background:transparent;box-shadow:inset 0 1px #fff9,0 2px 2px #263a2c66}
+.notebook-rings i::after{content:"";position:absolute;right:0;top:2px;width:4px;height:4px;border-radius:50%;background:#526b58}
+.notebook-clip{position:absolute;z-index:2;top:-8px;right:28px;width:17px;height:33px;border:2px solid #9aa99e;border-radius:11px;transform:rotate(10deg);box-shadow:0 2px 3px #233b2d55;pointer-events:none}
+.notebook-clip::after{content:"";position:absolute;inset:4px 4px 3px;border:2px solid #b7c2b8;border-radius:8px}
+.letterhead{display:flex;align-items:center;gap:11px}
+.letter-portrait{position:relative;display:block;width:64px;height:64px;flex:0 0 64px;overflow:hidden;border:2px solid #6a8b72;border-radius:50%;background:#e7eee5;box-shadow:0 0 0 3px #e5ece2}
+.letter-portrait img{position:absolute;top:-12px;left:50%;width:84px;height:auto;max-width:none;transform:translateX(-50%)}
+.letter-sender{font-size:15px;font-weight:700;color:#315841}
+.letter-type{margin-top:3px;color:#778176;font-size:11px;letter-spacing:.12em}
+.letter-rule{height:1px;margin:17px 0 13px;background:#a8b49f}
+.notice-paper .letter-conclusion{margin:0 0 12px;color:#244d38;font-family:"Songti SC",serif;font-size:23px;font-weight:700;line-height:1.35}
+.letter-steps{margin:0;padding:0;list-style:none;counter-reset:step}
+.letter-steps li{position:relative;counter-increment:step;min-height:41px;padding:9px 0 9px 34px;border-top:1px solid #d7dece;color:#37443b;font-size:14px;line-height:1.5}
+.letter-steps li::before{content:counter(step, decimal-leading-zero);position:absolute;left:0;top:10px;color:#315b48;font-size:12px;font-weight:800;letter-spacing:.02em}
+.notice[data-reading="one"] .letter-steps li:nth-child(1),.notice[data-reading="two"] .letter-steps li:nth-child(2),.notice[data-reading="three"] .letter-steps li:nth-child(3){margin:0 -8px;padding-left:42px;padding-right:8px;border-radius:5px;background:#e8f0e5;color:#214b35;box-shadow:inset 3px 0 #3d7955}
+.notice[data-reading="one"] .letter-steps li:nth-child(1)::before,.notice[data-reading="two"] .letter-steps li:nth-child(2)::before,.notice[data-reading="three"] .letter-steps li:nth-child(3)::before{left:8px}
+.letter-signature{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:17px;padding-top:10px;border-top:1px solid #a8b49f;color:#68766a;font-size:11px}
+.end-actions{z-index:11;left:0;right:0;bottom:23px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;text-align:center}
+.end-actions button{width:auto;min-height:32px;padding:4px 12px;border:0;border-radius:0;background:none;color:#d7e4d8;box-shadow:none;font-size:12px;font-weight:500;text-decoration:underline;text-underline-offset:4px}
+.end-actions button:active{transform:none;box-shadow:none;opacity:.65}
+
+@media(max-height:680px){.off .phone{top:50%;bottom:auto}.off .timer{top:7%;bottom:auto}.slider{margin-top:62px}.gesture{top:135px}.notice-paper.detective-notebook{min-height:0;padding:20px 17px 18px 30px}.notice-paper .letter-conclusion{font-size:21px;margin:0 0 9px}.letter-steps li{font-size:13px;padding-top:7px;padding-bottom:7px}.letter-signature{margin-top:10px}}
+@media(max-height:600px){.off .phone{width:min(74%,250px)}.off .timer{top:20px}}
+@media(prefers-reduced-motion:reduce){.gesture{animation:none;opacity:1}}

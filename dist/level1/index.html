@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>奶奶侦探｜第一关可玩成片</title>
+  <link rel="stylesheet" href="play-second-base.css">
+  <link rel="stylesheet" href="play-second-legacy.css">
+  <link rel="stylesheet" href="play-second-refinement.css">
+  <link rel="stylesheet" href="play.css?v=20261124-phone-header-4">
+<link rel="stylesheet" href="play-overlays.css?v=20261124-app-glass-1">
+</head>
+<body>
+  <div class="workspace">
+    <aside class="guide" aria-label="案件说明">
+      <div class="eyebrow">奶奶侦探 · 第一关</div>
+      <h1>差一按，<br>1999 元就没了</h1>
+      <p class="intro">跟周奶奶看清这笔“解冻费”，在确认转账前拉开何叔的手。</p>
+      <div class="divider"></div>
+      <p class="muted">剧情自动播放。何叔要按确认时，按住他的小臂或手，向左下拖到虚线安全区，阻止这笔转账。</p>
+    </aside>
+    <div class="device">
+      <main class="app" aria-label="奶奶侦探第一关可玩成片">
+        <div class="progress" id="progress" aria-hidden="true" hidden><i id="progressBar"></i></div>
+        <img id="still" class="media" src="play-assets/stills/首尾帧/S01-用户合成首帧.png" alt="">
+        <video id="video" class="media" playsinline webkit-playsinline preload="metadata" muted></video>
+        <div class="shade"></div>
+        <header class="topbar" id="topbar" hidden>
+          <button id="pauseButton" class="icon" type="button" aria-label="暂停播放"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg></button>
+          <div class="header-chip"><span class="episode" id="episode">第一关 · 赶去银行</span><span class="chapter-progress">1/1</span></div>
+          <button id="soundButton" class="icon" type="button" aria-label="关闭声音" aria-pressed="true"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg></button>
+          <button id="helpButton" class="icon" type="button" aria-label="帮助"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.4 2.4 0 1 1 4.2 1.6c-1.5 1-1.9 1.2-1.9 2.7"/><path d="M12 16.5h.01"/></svg></button>
+        </header>
+        <div id="timeTag" class="time-tag" hidden></div>
+        <canvas id="atmOverlay" width="941" height="1672" aria-hidden="true" hidden></canvas>
+        <div id="info" class="info" hidden></div>
+        <div id="caption" class="caption" hidden><span id="speaker" class="speaker"></span><span id="line" class="line"></span></div>
+        <section id="bridge" class="bridge" hidden aria-label="时间倒回半小时前">
+          <div class="bridge-questions"><span>何叔为什么着急转钱？</span><span>解冻费是什么？</span></div>
+          <div class="bridge-time"><span>答案在</span><strong>半小时前</strong></div>
+        </section>
+        <section id="startPanel" class="start">
+          <div class="start-panel">
+            <h1>差一按，1999 元就没了</h1>
+            <p>何叔拿着银行卡和字条，急着去银行转钱。跟上去看看。</p>
+            <button id="startButton" class="primary" type="button">开始调查</button>
+          </div>
+        </section>
+        <section id="resumePanel" class="resume" hidden>
+          <div class="resume-panel"><p>点一下继续第一关剧情。</p><button id="resumeButton" class="primary" type="button">继续播放</button></div>
+        </section>
+        <section id="helpPanel" class="help-panel" hidden aria-label="玩法说明"><div class="help-paper"><h2>玩法说明</h2><p>跟着奶奶看何叔走进银行。何叔的手靠近确认键时，按住他的小臂或手，向左下拖到白色虚线位置后松手，剧情才会继续。</p><button id="helpClose" class="primary" type="button">知道了</button></div></section>
+        <section id="interaction" class="off interaction" hidden aria-label="拉开何叔的手">
+          <canvas id="interactionCanvas" width="480" height="854" role="slider" tabindex="0" aria-label="按住何叔的小臂或手，向左下拖到虚线安全位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></canvas>
+          <div class="interaction-gesture" aria-hidden="true"><svg viewBox="0 0 48 58" fill="none"><path d="M20 53c-5-5-8-11-11-17-1-3 1-5 4-5 2 0 4 2 6 4V12c0-3 2-5 5-5s5 2 5 5v18-9c0-3 2-5 5-5s5 2 5 5v17c0 6-2 11-6 15H20Z" fill="#fff7df" stroke="#544c38" stroke-width="2.5" stroke-linejoin="round"/><path d="M6 18c0-9 7-16 16-16M3 18c0-11 8-19 19-19" stroke="#fff7df" stroke-width="2" stroke-linecap="round"/></svg><span>按住手向左下拖 ↙</span></div>
+        </section>
+        <section id="phoneStep" class="phone-step" hidden aria-label="联系原申请 App 官方客服">
+          <svg class="phone-screen-repair" viewBox="0 0 480 854" preserveAspectRatio="none" aria-hidden="true">
+            <path fill="#1677ff" d="M198 270 H331 Q344 270 344 284 V330 H184 V284 Q184 270 198 270 Z"/>
+            <path fill="#1d1d1d" d="M223 269 H311 V275 Q310 284 302 284 H232 Q223 284 223 275 Z"/>
+            <path stroke="#404040" stroke-width="2" stroke-linecap="round" d="M248 275 H285"/>
+            <path stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" d="M201 308 L196 313 L201 318"/>
+            <text x="264" y="318" fill="#fff" font-size="12" font-weight="700" text-anchor="middle" font-family="PingFang SC,Microsoft Yahei,sans-serif">原申请 App</text>
+            <g fill="#fff"><circle cx="315" cy="313" r="1.2"/><circle cx="322" cy="313" r="1.2"/><circle cx="329" cy="313" r="1.2"/></g>
+          </svg>
+          <button id="phoneCallButton" class="phone-call-button" type="button" aria-label="联系官方客服"></button>
+          <div id="phoneGesture" class="phone-gesture" aria-hidden="true"><svg viewBox="0 0 48 58" fill="none"><path d="M20 53c-5-5-8-11-11-17-1-3 1-5 4-5 2 0 4 2 6 4V12c0-3 2-5 5-5s5 2 5 5v18-9c0-3 2-5 5-5s5 2 5 5v17c0 6-2 11-6 15H20Z" fill="#fff7df" stroke="#544c38" stroke-width="2.5" stroke-linejoin="round"/><path d="M6 18c0-9 7-16 16-16M3 18c0-11 8-19 19-19" stroke="#fff7df" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <p id="phoneHint" class="phone-hint"><span class="phone-hint-label">操作指引</span>点击手机上的「联系官方客服」</p>
+        </section>
+        <section id="notice" class="notice" hidden aria-label="侦探笔记本">
+          <div class="notice-paper detective-notebook">
+            <span class="notebook-rings" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="notebook-clip" aria-hidden="true"></span>
+            <div class="letterhead"><span class="letter-portrait"><img src="assets/grandma-portrait.png" alt=""></span><div><div class="letter-sender">奶奶侦探 · 防骗提醒</div><div class="letter-type">案件复盘与安全告知</div></div></div>
+            <div class="letter-rule"></div><h2 class="letter-conclusion">记住这三点</h2>
+            <ol class="letter-steps"><li>放款前要交“解冻费”，先别转。</li><li>看清收款人，个人账户不要转。</li><li>从原申请入口找官方客服核实。</li></ol>
+            <div class="letter-signature">奶奶侦探 · 安全提示</div>
+          </div>
+          <div class="end-actions on"><button id="replay" type="button">再看一遍 ↺</button></div>
+        </section>
+      </main>
+    </div>
+  </div>
+<script src="play.js?v=20261124-official-copy-1"></script>
+</body>
+</html>
