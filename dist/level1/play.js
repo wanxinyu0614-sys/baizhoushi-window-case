@@ -14,7 +14,7 @@ const voiceNames = ['bridge_narration','verify_official','safety_intro','tip1','
 const voiceFiles = {
   bridge_narration: 'play-assets/audio/bridge-narration-grandma.wav?v=20261123-question-2',
   verify_official: 'play-assets/audio/verify_official-chen-aunt-v2.wav?v=20261124-official-copy-1',
-  safety_intro: '../level2/assets/safety-intro-grandma.wav?v=20261125'
+  safety_intro: 'assets/audio/safety-intro-grandma.wav?v=20261125'
 };
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 const masterGain = audioContext.createGain();
@@ -83,6 +83,7 @@ const scenes = [
 
 const stillCache = new Map();
 const videoCache = new Map();
+const videoLoads = new Map();
 let mediaLoad, activeVideo = $('video'), stillAnimation;
 function seekVideo(video, seconds) {
   if (Math.abs(video.currentTime-seconds) < .02) return Promise.resolve();
@@ -102,22 +103,30 @@ function ensureMedia() {
     const img = new Image(); img.src = frame(name); stillCache.set(name,img);
     return img.decode().catch(() => { throw new Error(`图片加载失败：${name}`); });
   });
-  // Reuse the same video element across cuts so iOS keeps the playback
-  // permission granted by the first Start tap.
-  const video = $('video');
-  video.preload = 'none';
-  video.style.display = 'none';
-  video.addEventListener('timeupdate',() => {
-    if (video !== activeVideo || !['scene','paused'].includes(phase)) return;
-    const name = video.dataset.segment;
-    const base = name === 'intro' ? 0 : name === 'outro' ? 9 : 14;
-    const elapsed = base + video.currentTime;
-    $('progressBar').style.width = `${Math.min(100,elapsed / 48 * 100)}%`;
+  ['intro','outro','memory','phone'].forEach(name => {
+    const video = document.createElement('video');
+    video.className = 'media'; video.muted = name === 'phone' || !soundEnabled; video.playsInline = true;
+    video.loop = name === 'phone';
+    video.dataset.segment = name;
+    video.preload = 'auto'; video.style.display = 'none';
+    video.addEventListener('timeupdate',() => {
+      if (video !== activeVideo || !['scene','paused'].includes(phase)) return;
+      const base = name === 'intro' ? 0 : name === 'outro' ? 9 : 14;
+      const elapsed = base + video.currentTime;
+      $('progressBar').style.width = `${Math.min(100,elapsed / 48 * 100)}%`;
+    });
+    $('still').parentElement.insertBefore(video,$('still'));
+    videoCache.set(name,video);
+    const ready = new Promise((resolve,reject) => {
+      video.addEventListener('loadeddata',resolve,{once:true});
+      video.addEventListener('error',() => reject(new Error(`视频加载失败：${name}`)),{once:true});
+      video.src = videoFile(name); video.load();
+    });
+    videoLoads.set(name,ready);
+    ready.catch(() => {});
   });
-  ['intro','outro','memory','phone'].forEach(name => videoCache.set(name,video));
-  // Images can load in the background. Mobile browsers may not fetch a video
-  // until play() is called from the user's tap, even with preload="auto".
-  mediaLoad = Promise.all([...images,loadInteractionArt()]);
+  // The opening can start as soon as its own video and poster are ready.
+  mediaLoad = Promise.all([...images,videoLoads.get('intro'),loadInteractionArt()]);
   return mediaLoad;
 }
 
@@ -152,8 +161,8 @@ function loadInteractionArt() {
   if (!interactionArtLoad) interactionArtLoad = (async () => {
     const root = 'play-assets/interaction/三帧对位-20261123/';
     const names = {
-      raised:'02-原视频伸手帧.png',
-      lowered:'03-收回手对位帧.png'
+      raised:'02-伸手帧-ATM斜面统一.png',
+      lowered:'03-收手帧-ATM斜面统一.png'
     };
     const entries = await Promise.all(Object.entries(names).map(async ([key,name]) => {
       const img = new Image(); img.src = root+name; await img.decode();
@@ -255,11 +264,6 @@ function drawInteraction() {
   const {raised,lowered} = interactionArt;
   ctx.drawImage(p === 1 ? lowered : raised,0,0);
   drawTargetOutline(ctx);
-  if (p < 1) {
-    ctx.save(); ctx.strokeStyle='#ffe095'; ctx.lineWidth=3.5;
-    ctx.beginPath(); ctx.arc(armTip.x,armTip.y,20,0,Math.PI*2); ctx.stroke();
-    ctx.restore();
-  }
   canvas.setAttribute('aria-valuenow',String(Math.round(p*100)));
 }
 function pointInArt(event) {
@@ -389,11 +393,12 @@ function scheduleCues(cues, currentRun, partStart) {
     });
   }
 }
-function showStill(name, seconds = 0) {
+async function showStill(name, seconds = 0) {
   const el = $('still');
   const src = frame(name);
   if (!stillCache.has(name)) {
     const img = new Image(); img.src = src; stillCache.set(name,img);
+    await img.decode();
   }
   if (el.getAttribute('src') !== src) el.src = src;
   activeVideo.pause(); activeVideo.style.display = 'none';
@@ -405,26 +410,15 @@ function showStill(name, seconds = 0) {
 }
 async function beginSequence(name, poster, currentRun, start = 0) {
   const v = videoCache.get(name);
-  if (name !== 'memory') showStill(poster);
+  await videoLoads.get(name);
+  if (name !== 'memory') await showStill(poster);
+  if (currentRun !== runId) return false;
+  await seekVideo(v,start);
   if (currentRun !== runId) return false;
   activeVideo = v;
   v.style.transform = '';
   v.style.display = 'block';
-  v.loop = name === 'phone';
-  v.muted = name === 'phone' || !soundEnabled;
-  if (v.dataset.segment !== name) {
-    v.dataset.segment = name;
-    v.src = videoFile(name);
-  }
-  // Start playback before the first await, while the tap still grants audio.
-  const playback = v.play();
-  try {
-    await Promise.race([
-      playback,
-      new Promise((_,reject) => setTimeout(() => reject(new Error('视频启动超时')),12000))
-    ]);
-    if (start > 0) await seekVideo(v,start);
-  }
+  try { await v.play(); }
   catch {
     phase = 'autoplay-blocked';
     $('resumePanel').hidden = false;
@@ -437,7 +431,6 @@ async function beginSequence(name, poster, currentRun, start = 0) {
   ]);
   if (currentRun !== runId) return false;
   $('still').style.display = 'none';
-  if (name === 'memory') $('bridge').hidden = true;
   return true;
 }
 async function playPart(part, currentRun, cues) {
@@ -501,9 +494,15 @@ async function playBridge(currentRun) {
   if (currentRun !== runId) return;
   await pause(900,currentRun);
   if (currentRun !== runId) return;
+  const memory = videoCache.get('memory');
+  await videoLoads.get('memory');
+  await seekVideo(memory,0);
   if (currentRun !== runId) return;
   activeVideo.pause();
   activeVideo.style.display = 'none';
+  memory.style.display = 'block';
+  $('still').style.display = 'none';
+  $('bridge').hidden = true;
   phase = 'flashback';
 }
 async function beginInteraction(currentRun) {
@@ -536,10 +535,8 @@ async function beginPhoneStep(currentRun) {
   setInfo(''); setTag(''); setCaption();
   const phone = videoCache.get('phone');
   try {
-    activeVideo.pause();
-    phone.dataset.segment = 'phone';
-    phone.loop = true;
-    phone.src = videoFile('phone');
+    await videoLoads.get('phone');
+    await seekVideo(phone,0);
     if (currentRun !== runId) return;
     phone.muted = true;
     await phone.play();
@@ -556,6 +553,7 @@ async function beginPhoneStep(currentRun) {
     return;
   }
   if (currentRun !== runId) return;
+  activeVideo.pause(); activeVideo.style.display = 'none';
   activeVideo = phone;
   phone.style.display = 'block';
   $('still').style.display = 'none';
@@ -619,7 +617,7 @@ function beginNotice(currentRun) {
     if (currentRun === runId) { $('notice').dataset.reading = ''; setCaption(); }
   })();
 }
-function restart() {
+async function restart() {
   runId++; clearTimers();
   pendingAutoplayResolve = null;
   const startButton = $('startButton');
@@ -635,18 +633,23 @@ function restart() {
   draggingArm = false; interactionProgress = 0;
   setInfo(''); setTag(''); setCaption();
   const currentRun = runId;
-  audioContext.resume().catch(() => {});
-  ensureVoices().then(() => {
+  try {
+    await audioContext.resume();
+    await Promise.all([ensureVoices(),ensureMedia()]);
+    await Promise.all([...videoCache.values()].map(video => {
+      video.getAnimations().forEach(animation => animation.cancel());
+      video.style.transform = '';
+      return seekVideo(video,0);
+    }));
+    document.body.dataset.audioState = audioContext.state;
     document.body.dataset.loadedVoices = String(voiceBuffers.size);
-  }).catch(error => { document.body.dataset.voiceError = error.message; });
-  ensureMedia().catch(error => { document.body.dataset.mediaError = error.message; });
-  for (const video of new Set(videoCache.values())) {
-    video.pause();
-    video.getAnimations().forEach(animation => animation.cancel());
-    video.style.transform = '';
-    if (video.readyState) { try { video.currentTime = 0; } catch {} }
+  } catch (error) {
+    startButton.disabled = false;
+    startButton.textContent = '重试播放';
+    $('startPanel').hidden = false;
+    $('startPanel').querySelector('p').textContent = error.message || '视频或配音加载失败，请重试。';
+    return;
   }
-  document.body.dataset.audioState = audioContext.state;
   if (currentRun !== runId) return;
   $('startPanel').hidden = true;
   startButton.disabled = false;
@@ -686,7 +689,7 @@ $('resumeButton').onclick = resumePlayback;
 $('soundButton').onclick = () => {
   soundEnabled = !soundEnabled;
   masterGain.gain.value = soundEnabled ? 1 : 0;
-  activeVideo.muted = activeVideo.dataset.segment === 'phone' || !soundEnabled;
+  for (const [name,video] of videoCache) video.muted = name === 'phone' || !soundEnabled;
   $('soundButton').setAttribute('aria-pressed',String(soundEnabled));
   $('soundButton').setAttribute('aria-label',soundEnabled ? '关闭声音' : '开启声音');
   $('soundButton').querySelector('svg').innerHTML = soundEnabled
@@ -744,4 +747,5 @@ $('interactionCanvas').addEventListener('keydown', e => {
   if (e.key==='Escape') { e.preventDefault(); setInteractionProgress(0); }
 });
 
-// Keep the opening video unloaded until the user taps Start.
+// Decode all small stills and warm each video before the user reaches a cut.
+ensureMedia().catch(() => {});

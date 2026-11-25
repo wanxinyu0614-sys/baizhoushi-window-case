@@ -151,3 +151,62 @@
 .off.done .operation-hint::before { content: "操作完成"; }
 .gesture { top: 149px; left: 20px; }
 @media(max-height:680px){.off .phone .timer.operation-hint{top:136px}}
+
+/* Shared touch hand and black toast, aligned to the shutdown thumb. */
+.gesture {
+  top: 101px;
+  left: 46px;
+  width: 47px;
+  height: 47px;
+  animation: touch-pulse 1.6s ease-in-out infinite;
+}
+.gesture img {
+  display: block;
+  width: 47px;
+  height: 47px;
+  filter: drop-shadow(0 2px 3px #000a);
+}
+@keyframes touch-pulse {
+  0%,100% { transform: scale(1); opacity: .82; }
+  50% { transform: scale(.95); opacity: 1; }
+}
+.off .phone .timer.operation-hint {
+  top: 151px;
+  left: 96px;
+  right: 8px;
+  bottom: auto;
+  display: block;
+  min-height: 0;
+  padding: 6px 9px;
+  border: 1px solid #ffffff70;
+  border-radius: 7px;
+  background: #111719ed;
+  box-shadow: 0 4px 11px #0008;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  text-shadow: 0 1px 2px #0009;
+}
+.off .phone .timer.operation-hint::before,.off.done .operation-hint::before { display: none; content: none; }
+@media(max-height:680px){.gesture{top:87px}.off .phone .timer.operation-hint{top:137px}}
+
+/* Keep the hand above the slider, with the instruction directly below. */
+.off .phone .gesture { z-index: 4; }
+.off .phone .timer.operation-hint { z-index: 3; top: 164px; left: -8px; right: auto; width: 188px; text-align: center; }
+@media(max-height:680px){.off .phone .timer.operation-hint{top:150px}}
+
+/* Demonstrate sliding the shutdown thumb all the way to the right. */
+.off .phone .gesture {
+  animation: shutdown-guide-drag 2.7s ease-in-out infinite;
+}
+@keyframes shutdown-guide-drag {
+  0% { left: 46px; opacity: 0; transform: scale(1); }
+  8%, 25% { left: 46px; opacity: 1; transform: scale(1); }
+  30% { left: 46px; opacity: 1; transform: scale(.92); }
+  72% { left: calc(100% - 60px); opacity: 1; transform: scale(.92); }
+  80% { left: calc(100% - 60px); opacity: 1; transform: scale(1); }
+  90% { left: calc(100% - 60px); opacity: 0; transform: scale(1); }
+  100% { left: 46px; opacity: 0; transform: scale(1); }
+}
