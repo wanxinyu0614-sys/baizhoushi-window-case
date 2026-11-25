@@ -41,7 +41,8 @@ jobs:
           for attempt in {1..18}; do
             count=$(curl -fsS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" | jq '[.artifacts[] | select(.name == "github-pages")] | length')
             if [ "$count" -gt 0 ]; then
-              echo "Pages artifact is visible (attempt $attempt)."
+              echo "Pages artifact is visible (attempt $attempt). Waiting 25s for deployment metadata."
+              sleep 25
               exit 0
             fi
             echo "Waiting for Pages artifact (attempt $attempt)..."
