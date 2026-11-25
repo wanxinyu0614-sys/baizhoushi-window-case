@@ -112,45 +112,48 @@
   left: 8%;
   right: 8%;
   bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 56px;
   margin: 0;
-  padding: 17px 14px 13px;
-  border: 1px solid #e8d8a4;
+  padding: 11px 13px;
+  border: 1px solid #c6d6c8a8;
   border-radius: 12px;
-  background: #10231feF;
-  box-shadow: 0 9px 28px #0007;
-  color: #fff9ea;
-  font-size: 15px;
+  background: rgba(14, 34, 29, .94);
+  box-shadow: 0 8px 24px #0007;
+  color: #fffaf0;
+  font-size: 14px;
   font-weight: 650;
-  line-height: 1.45;
-  text-align: center;
+  line-height: 1.4;
+  text-align: left;
   pointer-events: none;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 .operation-hint::before {
   content: "操作指引";
-  position: absolute;
-  top: -12px;
-  left: 12px;
-  padding: 3px 10px;
-  border-radius: 7px 7px 7px 2px;
-  background: #3f746c;
-  color: #fff9e7;
+  position: static;
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #36766c;
+  color: #fff;
   font-size: 11px;
   font-weight: 750;
-  line-height: 1.4;
-  letter-spacing: .03em;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 .interaction-gesture svg,.phone-gesture svg,.gesture svg {
-  width: 29px;
-  height: 37px;
+  width: 28px;
+  height: 36px;
   display: block;
-  filter: drop-shadow(0 3px 5px #0008);
+  filter: drop-shadow(0 2px 5px #000b);
 }
 @media (prefers-reduced-motion: reduce) {
   .interaction-gesture,.phone-gesture,.gesture { animation: none !important; opacity: 1; }
 }
-
-.off .timer.operation-hint { top: auto; bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); left: 8%; right: 8%; margin: 0; padding: 17px 14px 13px; color: #fff9ea; font-size: 15px; text-align: center; }
+.off .timer.operation-hint { top: auto; bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); left: 8%; right: 8%; margin: 0; padding: 11px 13px; color: #fffaf0; font-size: 14px; text-align: left; }
 .off.done .operation-hint::before { content: "操作完成"; }
 .gesture { top: 149px; left: 20px; }
