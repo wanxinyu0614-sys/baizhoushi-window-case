@@ -33,7 +33,7 @@ button:focus-visible,[role="slider"]:focus-visible{outline:3px solid #e7aa5e;out
 .info{top:18%;width:min(84%,330px);padding:14px;border:2px solid #5b4c36;border-radius:14px;background:#fff7dff2;color:#493d2c;box-shadow:0 5px #241e1770}
 .info small{color:#75694f}.info strong{font-size:19px}.info .confirm{color:#a9513d}
 .flash{top:15%;background:#fcf2d6f0;border:2px solid #75633e;border-radius:9px;color:#493d2c;box-shadow:0 2px #28272060;font-size:11px}
-.start{z-index:12;padding:0 13px max(19px,env(safe-area-inset-bottom));background:linear-gradient(#0002,transparent 40%,#08110a9c),url('assets/b-2.png') center/cover;align-items:stretch}
+.start{z-index:12;padding:0 13px max(19px,env(safe-area-inset-bottom));background:linear-gradient(#0002,transparent 40%,#08110a9c),url('assets/b-2-mobile.webp') center/cover;align-items:stretch}
 .start-panel,.resume-panel,.help-paper{width:100%;padding:17px;background:#fff7dff5;border:2px solid #5b4c36;border-radius:18px;box-shadow:0 4px #241e1770,0 0 0 3px #f5ecd222;color:#493d2c}
 .start .kicker,.off .kicker{color:#7e744d;font-size:11px;font-weight:600;letter-spacing:0}
 .start h1{margin:17px 0 12px;color:#493d2c;font-family:"Songti SC",serif;font-size:27px;font-weight:500;line-height:1.2}

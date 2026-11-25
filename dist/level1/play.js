@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const frame = name => `play-assets/stills/${name}${name.endsWith('.png') ? '' : '.webp'}`;
+const frame = name => `play-assets/stills/${name}${/\.(png|webp)$/.test(name) ? '' : '.webp'}`;
 const videoFile = name => ({
   intro:'play-assets/video-composed/intro-user-1122-opening-name-fixed-mobile.mp4',
   outro:'play-assets/video/s03-mobile.mp4',
@@ -22,17 +22,17 @@ masterGain.connect(audioContext.destination);
 let soundEnabled = true, pendingAutoplayResolve = null, helpWasPlaying = false;
 const voiceBuffers = new Map();
 const activeSources = new Set();
-let voiceLoad;
-function ensureVoices() {
-  if (!voiceLoad) voiceLoad = Promise.all(
-    voiceNames.map(async name => {
+const voiceLoads = new Map();
+function ensureVoices(names = voiceNames) {
+  return Promise.all(names.map(name => {
+    if (!voiceLoads.has(name)) voiceLoads.set(name,(async () => {
       const response = await fetch(voiceFiles[name] || `assets/audio/${name}.wav`)
         .catch(error => { throw new Error(`配音请求失败：${name}（${error.message}）`); });
       if (!response.ok) throw new Error(`配音加载失败：${name}`);
       voiceBuffers.set(name, await audioContext.decodeAudioData(await response.arrayBuffer()));
-    })
-  );
-  return voiceLoad;
+    })());
+    return voiceLoads.get(name);
+  }));
 }
 const I = {
   atm: ['','<small>自助银行 · 转账确认</small><strong>¥1,999.00</strong><div class="row"><span>收款人</span><b>李某（个人账户）</b></div><div class="row"><span>卡号</span><b>尾号 6382</b></div><div class="action">确认转账</div>'],
@@ -59,7 +59,7 @@ const nativeCaptionLengths = {
 };
 const scenes = [
   {name:'赶去银行',cues:[[.46,'walk_g','奶奶','何叔，去哪儿？'],[1.62,'walk_h','何叔','去银行转钱。'],[6.14,'atm_g','奶奶','何叔，先别按！'],[7.48,'atm_h','何叔','就差这一下，钱就能下来了！']],parts:[
-    V('user-01-03',9.33,'首尾帧/S01-用户合成首帧.png')
+    V('user-01-03',9.33,'首尾帧/S01-用户合成首帧-mobile.webp')
   ]},
   {name:'差一按',cues:[],parts:[]},
   {name:'问清原因',cues:[[.27,'why_g','奶奶','你急着转这钱干吗？'],[2.53,'why_h','何叔','说是解冻费，不交不放款。']],parts:[
@@ -95,14 +95,9 @@ function seekVideo(video, seconds) {
 }
 function ensureMedia() {
   if (mediaLoad) return mediaLoad;
-  const imageNames = new Set([
-    '首尾帧/S01-用户合成首帧.png', '首尾帧/S05-新片首帧.png',
-    ATM_BEFORE, ATM_AFTER
-  ]);
-  const images = [...imageNames].map(name => {
-    const img = new Image(); img.src = frame(name); stillCache.set(name,img);
-    return img.decode().catch(() => { throw new Error(`图片加载失败：${name}`); });
-  });
+  const openingPoster = '首尾帧/S01-用户合成首帧-mobile.webp';
+  const img = new Image(); img.src = frame(openingPoster); stillCache.set(openingPoster,img);
+  const posterReady = img.decode().catch(() => { throw new Error(`图片加载失败：${openingPoster}`); });
   ['intro','outro','memory','phone'].forEach(name => {
     const video = document.createElement('video');
     video.className = 'media'; video.muted = name === 'phone' || !soundEnabled; video.playsInline = true;
@@ -127,7 +122,7 @@ function ensureMedia() {
     ready.catch(() => {});
   });
   // The opening can start as soon as its own video and poster are ready.
-  mediaLoad = Promise.all([...images,videoLoads.get('intro'),loadInteractionArt()]);
+  mediaLoad = Promise.all([posterReady,videoLoads.get('intro')]);
   return mediaLoad;
 }
 
@@ -451,7 +446,7 @@ async function playScene(index,currentRun) {
   if (index === 0 || index === 2 || index === 3) {
     sequenceElapsed = 0;
     const name = index === 0 ? 'intro' : index === 2 ? 'outro' : 'memory';
-    const poster = index === 0 ? '首尾帧/S01-用户合成首帧.png' :
+    const poster = index === 0 ? '首尾帧/S01-用户合成首帧-mobile.webp' :
       index === 2 ? '首尾帧/S05-新片首帧.png' : '首尾帧/S04-A-半小时前来电';
     try {
       if (!(await beginSequence(name,poster,currentRun))) return;
@@ -465,6 +460,7 @@ async function playScene(index,currentRun) {
       return;
     }
     if (index === 2) $('interaction').hidden = true;
+    if (index === 2) videoCache.get('memory')?.load();
   }
   let elapsed = 0;
   for (const part of scenes[index].parts) {
@@ -490,6 +486,8 @@ async function playBridge(currentRun) {
   $('topbar').hidden = true;
   setInfo(''); setTag(''); setCaption();
   $('bridge').hidden = false;
+  await ensureVoices(['bridge_narration']);
+  if (currentRun !== runId) return;
   // The green mask, full question and female narration begin together.
   const source = playVoice('bridge_narration','奶奶','何叔为什么着急转钱？解冻费是什么？答案在半小时前。',currentRun,'',false);
   await new Promise(resolve => source.addEventListener('ended',resolve,{once:true}));
@@ -538,6 +536,7 @@ async function beginPhoneStep(currentRun) {
   phase = 'phone-loading';
   setInfo(''); setTag(''); setCaption();
   const phone = videoCache.get('phone');
+  ensureVoices(['verify_official']).catch(() => {});
   try {
     if (phone.readyState < 2) phone.load();
     await videoLoads.get('phone');
@@ -578,6 +577,7 @@ async function contactOfficial() {
   $('phoneGesture').hidden = true;
   $('phoneHint').hidden = true;
   await audioContext.resume();
+  await ensureVoices(['verify_official']);
   if (currentRun !== runId) return;
   const source = playVoice('verify_official','官方客服','',currentRun,'',false);
   const finished = new Promise(resolve => source.addEventListener('ended',resolve,{once:true}));
@@ -611,6 +611,8 @@ function beginNotice(currentRun) {
     ['tip3','从原申请入口找官方客服核实。']
   ];
   (async () => {
+    await ensureVoices(['safety_intro','tip1','tip2','tip3']);
+    if (currentRun !== runId) return;
     playVoice('safety_intro','奶奶','',currentRun,'',false);
     await pause((voiceBuffers.get('safety_intro').duration+.2)*1000,currentRun);
     for (let i=0;i<tips.length;i++) {
@@ -640,7 +642,7 @@ async function restart() {
   const currentRun = runId;
   try {
     await audioContext.resume();
-    await Promise.all([ensureVoices(),ensureMedia()]);
+    await ensureMedia();
     for (const video of videoCache.values()) {
       video.getAnimations().forEach(animation => animation.cancel());
       video.style.transform = '';
