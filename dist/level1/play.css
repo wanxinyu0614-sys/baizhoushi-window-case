@@ -53,7 +53,6 @@ video.media { display: none; }
 @keyframes interaction-gesture { 0%,13%,100% {transform:translate(0,0);opacity:0} 22% {opacity:1} 72% {transform:translate(-20px,24px);opacity:1} 92% {transform:translate(-26px,30px);opacity:0} }
 .phone-step { position:absolute; z-index:7; inset:0; pointer-events:none; }
 .phone-step:not([hidden]) { display:block; }
-.phone-screen-repair { position:absolute; inset:0; width:100%; height:100%; }
 .phone-call-button { position:absolute; left:36%; top:47.8%; width:35%; height:5.7%; padding:0; border:0; border-radius:8px; background:transparent; cursor:pointer; pointer-events:auto; touch-action:manipulation; }
 .phone-call-button:focus-visible { outline:3px solid #ffe393; outline-offset:3px; }
 .phone-gesture { position:absolute; left:50%; top:49%; display:flex; align-items:center; pointer-events:none; animation:phone-gesture-tap 1.8s ease-in-out infinite; }
@@ -77,47 +76,49 @@ video.media { display: none; }
   left: 8%;
   right: 8%;
   bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 56px;
   margin: 0;
-  padding: 17px 14px 13px;
-  border: 1px solid #e8d8a4;
+  padding: 11px 13px;
+  border: 1px solid #c6d6c8a8;
   border-radius: 12px;
-  background: #10231feF;
-  box-shadow: 0 9px 28px #0007;
-  color: #fff9ea;
-  font-size: 15px;
+  background: rgba(14, 34, 29, .94);
+  box-shadow: 0 8px 24px #0007;
+  color: #fffaf0;
+  font-size: 14px;
   font-weight: 650;
-  line-height: 1.45;
-  text-align: center;
+  line-height: 1.4;
+  text-align: left;
   pointer-events: none;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 .operation-hint::before {
   content: "操作指引";
-  position: absolute;
-  top: -12px;
-  left: 12px;
-  padding: 3px 10px;
-  border-radius: 7px 7px 7px 2px;
-  background: #3f746c;
-  color: #fff9e7;
+  position: static;
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #36766c;
+  color: #fff;
   font-size: 11px;
   font-weight: 750;
-  line-height: 1.4;
-  letter-spacing: .03em;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 .interaction-gesture svg,.phone-gesture svg,.gesture svg {
-  width: 29px;
-  height: 37px;
+  width: 28px;
+  height: 36px;
   display: block;
-  filter: drop-shadow(0 3px 5px #0008);
+  filter: drop-shadow(0 2px 5px #000b);
 }
 @media (prefers-reduced-motion: reduce) {
   .interaction-gesture,.phone-gesture,.gesture { animation: none !important; opacity: 1; }
 }
-
 .interaction .operation-hint { z-index: 4; }
 .interaction-gesture { top: 40%; right: 8%; }
-.phone-step .phone-gesture { left: calc(43% - 25px); top: calc(47.8% + 10px); z-index: 9; }
-.phone-step .phone-gesture::after { content: ""; position: absolute; left: 25px; top: 2px; width: 14px; height: 14px; border: 1.5px solid #f4d37e; border-radius: 50%; box-shadow: 0 0 0 3px #f4d37e33; }
-.phone-hint.operation-hint { left: 8%; right: 8%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); padding: 17px 14px 13px; text-align: center; font-size: 15px; font-weight: 650; }
+.phone-step .phone-gesture { left: calc(40% - 15px); top: calc(47.8% + 9px); z-index: 9; }
+.phone-hint.operation-hint { left: 8%; right: 8%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); padding: 11px 13px; font-size: 14px; font-weight: 650; text-align: left; }
