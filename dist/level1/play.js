@@ -1,11 +1,11 @@
 const $ = id => document.getElementById(id);
 const frame = name => `play-assets/stills/${name}${name.endsWith('.png') ? '' : '.webp'}`;
 const videoFile = name => ({
-  intro:'play-assets/video-composed/intro-user-1122-opening-name-fixed.mp4',
-  outro:'play-assets/video/s03.mp4',
-  memory:'play-assets/video-composed/memory-through-app-prompt.mp4',
+  intro:'play-assets/video-composed/intro-user-1122-opening-name-fixed-mobile.mp4',
+  outro:'play-assets/video/s03-mobile.mp4',
+  memory:'play-assets/video-composed/memory-through-app-prompt-mobile.mp4',
   phone:'play-assets/video-composed/original-app-phone-loop.mp4'
-}[name]) + '?v=20261124-opening-name-1';
+}[name]) + '?v=20261125-mobile-1';
 const ATM_BEFORE = '关键特写/C01-确认前-手悬停与ATM-何叔修正版';
 const ATM_AFTER = '关键特写/C01B-取消结果-ATM屏幕-何叔修正版';
 const voiceNames = ['bridge_narration','verify_official','safety_intro','tip1','tip2','tip3'];
@@ -108,7 +108,7 @@ function ensureMedia() {
     video.className = 'media'; video.muted = name === 'phone' || !soundEnabled; video.playsInline = true;
     video.loop = name === 'phone';
     video.dataset.segment = name;
-    video.preload = 'auto'; video.style.display = 'none';
+    video.preload = name === 'intro' ? 'auto' : 'none'; video.style.display = 'none';
     video.addEventListener('timeupdate',() => {
       if (video !== activeVideo || !['scene','paused'].includes(phase)) return;
       const base = name === 'intro' ? 0 : name === 'outro' ? 9 : 14;
@@ -120,7 +120,8 @@ function ensureMedia() {
     const ready = new Promise((resolve,reject) => {
       video.addEventListener('loadeddata',resolve,{once:true});
       video.addEventListener('error',() => reject(new Error(`视频加载失败：${name}`)),{once:true});
-      video.src = videoFile(name); video.load();
+      video.src = videoFile(name);
+      if (name === 'intro') video.load();
     });
     videoLoads.set(name,ready);
     ready.catch(() => {});
@@ -410,6 +411,7 @@ async function showStill(name, seconds = 0) {
 }
 async function beginSequence(name, poster, currentRun, start = 0) {
   const v = videoCache.get(name);
+  if (v.readyState < 2) v.load();
   await videoLoads.get(name);
   if (name !== 'memory') await showStill(poster);
   if (currentRun !== runId) return false;
@@ -495,6 +497,7 @@ async function playBridge(currentRun) {
   await pause(900,currentRun);
   if (currentRun !== runId) return;
   const memory = videoCache.get('memory');
+  if (memory.readyState < 2) memory.load();
   await videoLoads.get('memory');
   await seekVideo(memory,0);
   if (currentRun !== runId) return;
@@ -507,6 +510,7 @@ async function playBridge(currentRun) {
 }
 async function beginInteraction(currentRun) {
   if (currentRun !== runId) return;
+  videoCache.get('outro')?.load();
   phase = 'interaction-loading';
   await loadInteractionArt();
   if (currentRun !== runId) return;
@@ -535,6 +539,7 @@ async function beginPhoneStep(currentRun) {
   setInfo(''); setTag(''); setCaption();
   const phone = videoCache.get('phone');
   try {
+    if (phone.readyState < 2) phone.load();
     await videoLoads.get('phone');
     await seekVideo(phone,0);
     if (currentRun !== runId) return;
@@ -636,11 +641,11 @@ async function restart() {
   try {
     await audioContext.resume();
     await Promise.all([ensureVoices(),ensureMedia()]);
-    await Promise.all([...videoCache.values()].map(video => {
+    for (const video of videoCache.values()) {
       video.getAnimations().forEach(animation => animation.cancel());
       video.style.transform = '';
-      return seekVideo(video,0);
-    }));
+    }
+    await seekVideo(videoCache.get('intro'),0);
     document.body.dataset.audioState = audioContext.state;
     document.body.dataset.loadedVoices = String(voiceBuffers.size);
   } catch (error) {
