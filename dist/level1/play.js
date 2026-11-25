@@ -85,6 +85,12 @@ const stillCache = new Map();
 const videoCache = new Map();
 const videoLoads = new Map();
 let mediaLoad, activeVideo = $('video'), stillAnimation;
+function playbackDeadline(promise, milliseconds = 12000) {
+  let timer;
+  return Promise.race([promise,new Promise((_,reject) => {
+    timer = setTimeout(() => reject(new Error('视频加载超时')),milliseconds);
+  })]).finally(() => clearTimeout(timer));
+}
 function seekVideo(video, seconds) {
   if (Math.abs(video.currentTime-seconds) < .02) return Promise.resolve();
   return new Promise((resolve,reject) => {
@@ -101,6 +107,7 @@ function ensureMedia() {
   ['intro','outro','memory','phone'].forEach(name => {
     const video = document.createElement('video');
     video.className = 'media'; video.muted = name === 'phone' || !soundEnabled; video.playsInline = true;
+    video.setAttribute('webkit-playsinline','');
     video.loop = name === 'phone';
     video.dataset.segment = name;
     video.preload = name === 'intro' ? 'auto' : 'none'; video.style.display = 'none';
@@ -121,8 +128,8 @@ function ensureMedia() {
     videoLoads.set(name,ready);
     ready.catch(() => {});
   });
-  // The opening can start as soon as its own video and poster are ready.
-  mediaLoad = Promise.all([posterReady,videoLoads.get('intro')]);
+  // Do not gate play() on loadeddata: iOS may wait for play() before loading media.
+  mediaLoad = posterReady;
   return mediaLoad;
 }
 
@@ -392,12 +399,13 @@ function scheduleCues(cues, currentRun, partStart) {
 async function showStill(name, seconds = 0) {
   const el = $('still');
   const src = frame(name);
+  const previousVideo = activeVideo;
+  previousVideo.pause(); previousVideo.style.display = 'none';
   if (!stillCache.has(name)) {
     const img = new Image(); img.src = src; stillCache.set(name,img);
     await img.decode();
   }
   if (el.getAttribute('src') !== src) el.src = src;
-  activeVideo.pause(); activeVideo.style.display = 'none';
   el.style.display = 'block';
   if (stillAnimation) { stillAnimation.cancel(); stillAnimation = null; }
   if (seconds >= 1.2) stillAnimation = el.animate([
@@ -406,21 +414,22 @@ async function showStill(name, seconds = 0) {
 }
 async function beginSequence(name, poster, currentRun, start = 0) {
   const v = videoCache.get(name);
-  if (v.readyState < 2) v.load();
-  await videoLoads.get(name);
-  if (name !== 'memory') await showStill(poster);
-  if (currentRun !== runId) return false;
-  await seekVideo(v,start);
-  if (currentRun !== runId) return false;
+  const posterReady = name !== 'memory' ? showStill(poster) : Promise.resolve();
   activeVideo = v;
   v.style.transform = '';
   v.style.display = 'block';
-  try { await v.play(); }
-  catch {
+  if (start && v.readyState >= 1) v.currentTime = start;
+  // This call must occur before the first await when the user taps Start.
+  const playback = v.play();
+  try { await playbackDeadline(playback); }
+  catch (error) {
+    v.pause();
     phase = 'autoplay-blocked';
+    $('resumePanel').querySelector('p').textContent = error?.message === '视频加载超时' ? '视频加载较慢，点一下重试播放。' : '点一下播放视频。';
     $('resumePanel').hidden = false;
     await new Promise(resolve => { pendingAutoplayResolve = resolve; });
   }
+  await Promise.all([posterReady,videoLoads.get(name)]);
   if (currentRun !== runId) return false;
   if (v.requestVideoFrameCallback) await Promise.race([
     new Promise(resolve => v.requestVideoFrameCallback(resolve)),
@@ -495,9 +504,6 @@ async function playBridge(currentRun) {
   await pause(900,currentRun);
   if (currentRun !== runId) return;
   const memory = videoCache.get('memory');
-  if (memory.readyState < 2) memory.load();
-  await videoLoads.get('memory');
-  await seekVideo(memory,0);
   if (currentRun !== runId) return;
   activeVideo.pause();
   activeVideo.style.display = 'none';
@@ -538,12 +544,10 @@ async function beginPhoneStep(currentRun) {
   const phone = videoCache.get('phone');
   ensureVoices(['verify_official']).catch(() => {});
   try {
-    if (phone.readyState < 2) phone.load();
-    await videoLoads.get('phone');
-    await seekVideo(phone,0);
-    if (currentRun !== runId) return;
     phone.muted = true;
     await phone.play();
+    await videoLoads.get('phone');
+    if (currentRun !== runId) return;
     if (phone.requestVideoFrameCallback) await Promise.race([
       new Promise(resolve => phone.requestVideoFrameCallback(resolve)),
       new Promise(resolve => setTimeout(resolve,300))
@@ -624,7 +628,7 @@ function beginNotice(currentRun) {
     if (currentRun === runId) { $('notice').dataset.reading = ''; setCaption(); }
   })();
 }
-async function restart() {
+function restart() {
   runId++; clearTimers();
   pendingAutoplayResolve = null;
   const startButton = $('startButton');
@@ -641,13 +645,14 @@ async function restart() {
   setInfo(''); setTag(''); setCaption();
   const currentRun = runId;
   try {
-    await audioContext.resume();
-    await ensureMedia();
+    audioContext.resume().catch(() => {});
+    ensureMedia().catch(() => {});
     for (const video of videoCache.values()) {
       video.getAnimations().forEach(animation => animation.cancel());
       video.style.transform = '';
     }
-    await seekVideo(videoCache.get('intro'),0);
+    const intro = videoCache.get('intro');
+    if (intro.readyState >= 1) intro.currentTime = 0;
     document.body.dataset.audioState = audioContext.state;
     document.body.dataset.loadedVoices = String(voiceBuffers.size);
   } catch (error) {
@@ -657,7 +662,6 @@ async function restart() {
     $('startPanel').querySelector('p').textContent = error.message || '视频或配音加载失败，请重试。';
     return;
   }
-  if (currentRun !== runId) return;
   $('startPanel').hidden = true;
   startButton.disabled = false;
   startButton.textContent = '开始调查';
@@ -680,14 +684,16 @@ function pausePlayback(showPanel = true) {
 async function resumePlayback() {
   if (!['paused','autoplay-blocked'].includes(phase)) return;
   try {
-    await audioContext.resume();
-    await activeVideo.play();
+    if (phase === 'autoplay-blocked') activeVideo.load();
+    const playback = activeVideo.play();
+    audioContext.resume().catch(() => {});
+    await playbackDeadline(playback);
     phase = 'scene';
     $('resumePanel').hidden = true;
     $('pauseButton').setAttribute('aria-label','暂停播放');
     if (pendingAutoplayResolve) { const resolve = pendingAutoplayResolve; pendingAutoplayResolve = null; resolve(); }
   } catch {
-    $('resumePanel').querySelector('p').textContent = '视频仍未能启动，请刷新页面重试。';
+    $('resumePanel').querySelector('p').textContent = '视频仍未能启动，请点下方按钮重试。';
     $('resumePanel').hidden = false;
   }
 }
