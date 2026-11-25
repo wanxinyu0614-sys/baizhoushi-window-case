@@ -126,7 +126,7 @@ const screenRects = {
   '关键特写/C03-回忆-陌生短信手机正面': {source:[1080,1920],rect:[415,660,340,645]},
   '关键特写/C04-回忆-字条银行卡手机': {source:[941,1672],rect:[278,940,360,390]},
   // Draw within the blank glass below the earpiece; its sides lean left.
-  '关键特写/C05-核实-原App手机正面': {source:[480,854],rect:[188,285,154,305]},
+  '关键特写/C05-核实-原App手机正面': {source:[480,854],rect:[191,285,147,305]},
   '首尾帧/S03-B-取消后展开字条': {source:[941,1672],rect:[648,759,113,82]},
 };
 let currentInfo = null;
