@@ -8,12 +8,13 @@ const videoFile = name => ({
 }[name]) + '?v=20261124-opening-name-1';
 const ATM_BEFORE = '关键特写/C01-确认前-手悬停与ATM-何叔修正版';
 const ATM_AFTER = '关键特写/C01B-取消结果-ATM屏幕-何叔修正版';
-const voiceNames = ['bridge_narration','verify_official','tip1','tip2','tip3'];
+const voiceNames = ['bridge_narration','verify_official','safety_intro','tip1','tip2','tip3'];
 // Character dialogue comes from the MP4 audio. Only the time bridge and
 // notebook are narrated separately because neither has speaking mouths.
 const voiceFiles = {
   bridge_narration: 'play-assets/audio/bridge-narration-grandma.wav?v=20261123-question-2',
-  verify_official: 'play-assets/audio/verify_official-chen-aunt-v2.wav?v=20261124-official-copy-1'
+  verify_official: 'play-assets/audio/verify_official-chen-aunt-v2.wav?v=20261124-official-copy-1',
+  safety_intro: '../level2/assets/safety-intro-grandma.wav?v=20261125'
 };
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 const masterGain = audioContext.createGain();
@@ -607,6 +608,8 @@ function beginNotice(currentRun) {
     ['tip3','从原申请入口找官方客服核实。']
   ];
   (async () => {
+    playVoice('safety_intro','奶奶','',currentRun,'',false);
+    await pause((voiceBuffers.get('safety_intro').duration+.2)*1000,currentRun);
     for (let i=0;i<tips.length;i++) {
       if (currentRun !== runId) return;
       playVoice(tips[i][0],'奶奶',tips[i][1],currentRun,String(i+1));
