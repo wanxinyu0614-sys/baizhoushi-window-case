@@ -69,3 +69,55 @@ video.media { display: none; }
 .notice[data-reading="2"] .letter-steps li:nth-child(2)::before,
 .notice[data-reading="3"] .letter-steps li:nth-child(3)::before { left: 8px; }
 [hidden] { display: none!important; }
+
+/* Shared interaction guidance for both levels. */
+.operation-hint {
+  position: absolute;
+  z-index: 5;
+  left: 8%;
+  right: 8%;
+  bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  margin: 0;
+  padding: 17px 14px 13px;
+  border: 1px solid #e8d8a4;
+  border-radius: 12px;
+  background: #10231feF;
+  box-shadow: 0 9px 28px #0007;
+  color: #fff9ea;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.45;
+  text-align: center;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.operation-hint::before {
+  content: "操作指引";
+  position: absolute;
+  top: -12px;
+  left: 12px;
+  padding: 3px 10px;
+  border-radius: 7px 7px 7px 2px;
+  background: #3f746c;
+  color: #fff9e7;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.4;
+  letter-spacing: .03em;
+}
+.interaction-gesture svg,.phone-gesture svg,.gesture svg {
+  width: 29px;
+  height: 37px;
+  display: block;
+  filter: drop-shadow(0 3px 5px #0008);
+}
+@media (prefers-reduced-motion: reduce) {
+  .interaction-gesture,.phone-gesture,.gesture { animation: none !important; opacity: 1; }
+}
+
+.interaction .operation-hint { z-index: 4; }
+.interaction-gesture { top: 40%; right: 8%; }
+.phone-step .phone-gesture { left: calc(36% - 28px); top: calc(47.8% + 10px); z-index: 9; }
+.phone-step .phone-gesture::after { content: ""; position: absolute; left: 25px; top: 2px; width: 14px; height: 14px; border: 1.5px solid #f4d37e; border-radius: 50%; box-shadow: 0 0 0 3px #f4d37e33; }
+.phone-hint.operation-hint { left: 8%; right: 8%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); padding: 17px 14px 13px; text-align: center; font-size: 15px; font-weight: 650; }
