@@ -118,6 +118,6 @@ video.media { display: none; }
 
 .interaction .operation-hint { z-index: 4; }
 .interaction-gesture { top: 40%; right: 8%; }
-.phone-step .phone-gesture { left: calc(36% - 28px); top: calc(47.8% + 10px); z-index: 9; }
+.phone-step .phone-gesture { left: calc(43% - 25px); top: calc(47.8% + 10px); z-index: 9; }
 .phone-step .phone-gesture::after { content: ""; position: absolute; left: 25px; top: 2px; width: 14px; height: 14px; border: 1.5px solid #f4d37e; border-radius: 50%; box-shadow: 0 0 0 3px #f4d37e33; }
 .phone-hint.operation-hint { left: 8%; right: 8%; bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); padding: 17px 14px 13px; text-align: center; font-size: 15px; font-weight: 650; }
