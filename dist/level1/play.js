@@ -5,7 +5,7 @@ const videoFile = name => ({
   outro:'play-assets/video/s03-mobile.mp4',
   memory:'play-assets/video-composed/memory-through-app-prompt-mobile.mp4',
   phone:'play-assets/video-composed/original-app-phone-loop.mp4'
-}[name]) + '?v=20261125-mobile-1';
+}[name]) + '?v=20261125-mobile-2';
 const ATM_BEFORE = '关键特写/C01-确认前-手悬停与ATM-何叔修正版';
 const ATM_AFTER = '关键特写/C01B-取消结果-ATM屏幕-何叔修正版';
 const voiceNames = ['bridge_narration','verify_official','safety_intro','tip1','tip2','tip3'];
