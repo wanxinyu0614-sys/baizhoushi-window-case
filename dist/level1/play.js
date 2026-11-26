@@ -2,8 +2,7 @@ const $ = id => document.getElementById(id);
 const frame = name => `play-assets/stills/${name}${/\.(png|webp)$/.test(name) ? '' : '.webp'}`;
 const videoFile = name => ({
   intro:'play-assets/video-composed/intro-user-1122-opening-name-fixed-mobile.mp4',
-  outro:'play-assets/video/s03-mobile.mp4',
-  memory:'play-assets/video-composed/memory-through-app-prompt-mobile.mp4',
+  outro:'play-assets/video-composed/outro-memory-mobile.mp4',
   phone:'play-assets/video-composed/original-app-phone-loop.mp4'
 }[name]) + '?v=20261125-mobile-2';
 const ATM_BEFORE = '关键特写/C01-确认前-手悬停与ATM-何叔修正版';
@@ -104,7 +103,7 @@ function ensureMedia() {
   const openingPoster = '首尾帧/S01-用户合成首帧-mobile.webp';
   const img = new Image(); img.src = frame(openingPoster); stillCache.set(openingPoster,img);
   const posterReady = img.decode().catch(() => { throw new Error(`图片加载失败：${openingPoster}`); });
-  ['intro','outro','memory','phone'].forEach(name => {
+  ['intro','outro','phone'].forEach(name => {
     const video = document.createElement('video');
     video.className = 'media'; video.muted = name === 'phone' || !soundEnabled; video.playsInline = true;
     video.setAttribute('webkit-playsinline','');
@@ -128,6 +127,9 @@ function ensureMedia() {
     videoLoads.set(name,ready);
     ready.catch(() => {});
   });
+  // The bank scene, time bridge and memory share one audible video element.
+  videoCache.set('memory',videoCache.get('outro'));
+  videoLoads.set('memory',videoLoads.get('outro'));
   // Do not gate play() on loadeddata: iOS may wait for play() before loading media.
   mediaLoad = posterReady;
   return mediaLoad;
@@ -401,6 +403,7 @@ async function showStill(name, seconds = 0) {
   const src = frame(name);
   const previousVideo = activeVideo;
   previousVideo.pause(); previousVideo.style.display = 'none';
+  el.style.display = 'block';
   if (!stillCache.has(name)) {
     const img = new Image(); img.src = src; stillCache.set(name,img);
     await img.decode();
@@ -414,6 +417,10 @@ async function showStill(name, seconds = 0) {
 }
 async function beginSequence(name, poster, currentRun, start = 0) {
   const v = videoCache.get(name);
+  if (name === 'memory' && v === activeVideo) {
+    $('bridge').hidden = true;
+    return currentRun === runId;
+  }
   const posterReady = name !== 'memory' ? showStill(poster) : Promise.resolve();
   activeVideo = v;
   v.style.transform = '';
@@ -437,6 +444,7 @@ async function beginSequence(name, poster, currentRun, start = 0) {
   ]);
   if (currentRun !== runId) return false;
   $('still').style.display = 'none';
+  if (name === 'memory') $('bridge').hidden = true;
   return true;
 }
 async function playPart(part, currentRun, cues) {
@@ -453,7 +461,7 @@ async function playScene(index,currentRun) {
   $('topbar').hidden = false;
   $('episode').textContent = `第一关 · ${scenes[index].name}`;
   if (index === 0 || index === 2 || index === 3) {
-    sequenceElapsed = 0;
+    sequenceElapsed = index === 3 ? 11.79 : 0;
     const name = index === 0 ? 'intro' : index === 2 ? 'outro' : 'memory';
     const poster = index === 0 ? '首尾帧/S01-用户合成首帧-mobile.webp' :
       index === 2 ? '首尾帧/S05-新片首帧.png' : '首尾帧/S04-A-半小时前来电';
@@ -468,8 +476,6 @@ async function playScene(index,currentRun) {
       $('startPanel').hidden = false;
       return;
     }
-    if (index === 2) $('interaction').hidden = true;
-    if (index === 2) videoCache.get('memory')?.load();
   }
   let elapsed = 0;
   for (const part of scenes[index].parts) {
@@ -495,21 +501,9 @@ async function playBridge(currentRun) {
   $('topbar').hidden = true;
   setInfo(''); setTag(''); setCaption();
   $('bridge').hidden = false;
-  await ensureVoices(['bridge_narration']);
+  // Narration and the held bank frame are part of the same video track.
+  await waitForVideoTime(activeVideo,11.79,currentRun);
   if (currentRun !== runId) return;
-  // The green mask, full question and female narration begin together.
-  const source = playVoice('bridge_narration','奶奶','何叔为什么着急转钱？解冻费是什么？答案在半小时前。',currentRun,'',false);
-  await new Promise(resolve => source.addEventListener('ended',resolve,{once:true}));
-  if (currentRun !== runId) return;
-  await pause(900,currentRun);
-  if (currentRun !== runId) return;
-  const memory = videoCache.get('memory');
-  if (currentRun !== runId) return;
-  activeVideo.pause();
-  activeVideo.style.display = 'none';
-  memory.style.display = 'block';
-  $('still').style.display = 'none';
-  $('bridge').hidden = true;
   phase = 'flashback';
 }
 async function beginInteraction(currentRun) {
@@ -532,10 +526,13 @@ async function completeInteraction() {
   phase = 'after-interaction';
   const currentRun = runId;
   setInteractionProgress(1);
-  // Let the lowered hand and its aligned safety outline read before the next clip.
-  await pause(1200,currentRun);
+  // Start the next audible video inside the release gesture on iPhone.
+  // Keep the lowered-hand artwork briefly over its opening hold.
+  const nextScene = playScene(2,currentRun);
+  await pause(750,currentRun);
   if (currentRun !== runId) return;
-  await playScene(2,currentRun);
+  $('interaction').hidden = true;
+  await nextScene;
 }
 async function beginPhoneStep(currentRun) {
   if (currentRun !== runId) return;

@@ -23,6 +23,7 @@
 <main class="app" aria-label="奶奶侦探第二关：贴膜惊魂">
   <div class="progress"><i id="progress"></i></div>
   <video id="video" class="media" playsinline webkit-playsinline preload="auto"></video>
+  <canvas id="holdFrame" class="media" width="480" height="854" hidden aria-hidden="true"></canvas>
   <audio id="bridgeAudio" src="assets/bridge-narration-grandma-clone.wav" preload="none"></audio>
   <audio id="endingAudio" preload="auto"></audio>
   <img id="endCard" class="end-card" src="assets/ending.png" alt="贴膜不用给控制权限。手机失控先断联，钱转走找银行、报警。">
@@ -61,39 +62,103 @@
 <script>
 const $=id=>document.getElementById(id);
 const scenes=[
-  {id:'AB',src:'assets/ab-join-mobile.mp4',start:.5,end:14.64,base:0,cues:[[.9,3.22,'陈姨','我没碰它！它自己在动！'],[4.05,6,'贴膜摊主','可能中病毒了，我帮您看看。'],[6.15,7.55,'奶奶','别碰她的手机！'],[8.88,10.6,'贴膜摊主','我帮她修手机还错了？'],[11.26,13.37,'奶奶','修手机能自动转钱？']]},
-  {id:'C',src:'assets/c.mp4',start:0,end:6.03,base:14.14,cues:[[2.18,4.6,'陈姨','那是给孙子攒的学费啊……'],[4.68,5.8,'奶奶','快关机！']]},
-  {id:'D',src:'assets/d-mobile.mp4',start:0,end:8.04,base:23.17,cues:[[2.82,4.95,'奶奶','想跑？大伙拦住他！'],[5.46,7.78,'奶奶','我要报警！早市有人诈骗！']]},
-  {id:'E',src:'assets/e-mobile.mp4',start:0,end:7.03,base:37.91,cues:[[0.05,2.65,'贴膜摊主','贴好膜得测下屏，装个检测工具。'],[4.39,6.2,'陈姨','测屏还要控制我手机？']]},
-  {id:'F',src:'assets/f.mp4',start:0,end:5.01,base:44.94,cues:[[0.05,2.15,'贴膜摊主','点一下允许，不然没法测。']]},
-  {id:'G',src:'assets/g.mp4',start:0,end:3.33,base:49.95,cues:[]}
+  {id:'AB',src:'assets/ab-c-mobile.mp4',start:0,end:14.14,base:0,cues:[[.9,3.22,'陈姨','我没碰它！它自己在动！'],[4.05,6,'贴膜摊主','可能中病毒了，我帮您看看。'],[6.15,7.55,'奶奶','别碰她的手机！'],[8.88,10.6,'贴膜摊主','我帮她修手机还错了？'],[11.26,13.37,'奶奶','修手机能自动转钱？']]},
+  {id:'C',src:'assets/ab-c-mobile.mp4',start:14.14,end:20.17,base:14.14,cues:[[2.18,4.6,'陈姨','那是给孙子攒的学费啊……'],[4.68,5.8,'奶奶','快关机！']]},
+  {id:'D',src:'assets/d-memory-mobile.mp4',start:0,end:8.04,base:23.17,cues:[[2.82,4.95,'奶奶','想跑？大伙拦住他！'],[5.46,7.78,'奶奶','我要报警！早市有人诈骗！']]},
+  {id:'E',src:'assets/d-memory-mobile.mp4',start:14.74,end:21.77,base:37.91,cues:[[0.05,2.65,'贴膜摊主','贴好膜得测下屏，装个检测工具。'],[4.39,6.2,'陈姨','测屏还要控制我手机？']]},
+  {id:'F',src:'assets/d-memory-mobile.mp4',start:21.77,end:26.77,base:44.94,cues:[[0.05,2.15,'贴膜摊主','点一下允许，不然没法测。']]},
+  {id:'G',src:'assets/d-memory-mobile.mp4',start:26.77,end:30.10,base:49.95,cues:[]}
 ];
 let sceneIndex=-1,phase='ready',advancing=false,loadToken=0,dragging=false,dragX=0,endingTimer=0,bridgeTimer=0,resolveTimer=0,loadingTimer=0,voiceToken=0;
+const voiceContext=new (window.AudioContext||window.webkitAudioContext)();
+const voiceGain=voiceContext.createGain();voiceGain.connect(voiceContext.destination);
+const voiceBuffers=new Map(),voiceLoads=new Map();
+let voiceNode=null,voiceRetry=null;
+function loadVoice(file){
+  if(!voiceLoads.has(file))voiceLoads.set(file,(async()=>{
+    const response=await fetch('assets/'+file);
+    if(!response.ok)throw new Error('旁白加载失败：'+file);
+    const buffer=await voiceContext.decodeAudioData(await response.arrayBuffer());
+    voiceBuffers.set(file,buffer);return buffer;
+  })());
+  return voiceLoads.get(file);
+}
+function preloadVoices(){
+  ['case-explanation-grandma.wav','safety-intro-grandma.wav','safety-one-grandma.wav','safety-two-grandma.wav','safety-three-grandma.wav'].forEach(file=>loadVoice(file).catch(()=>{}));
+}
+function playVoiceBuffer(buffer,done){
+  const source=voiceContext.createBufferSource();source.buffer=buffer;source.connect(voiceGain);
+  source.onended=()=>{if(voiceNode===source)voiceNode=null;done?.()};
+  voiceNode=source;source.start();return source;
+}
+function showVoiceResume(retry){
+  voiceRetry=retry;phase='voice-paused';$('resumeText').textContent='点一下播放旁白';$('resume').classList.add('on');
+}
+function freezeFrame(){
+  const video=$('video'),hold=$('holdFrame');
+  if(video.readyState<2)return;
+  try{hold.getContext('2d').drawImage(video,0,0,hold.width,hold.height);hold.hidden=false}catch{}
+}
+function releaseFrame(){
+  const hold=$('holdFrame');
+  if(hold.hidden)return;
+  const video=$('video');
+  if(video.requestVideoFrameCallback)video.requestVideoFrameCallback(()=>{hold.hidden=true});
+  else setTimeout(()=>{hold.hidden=true},100);
+}
 function cap(speaker,line){$('speaker').textContent=speaker||'';$('line').textContent=line||'';$('caption').dataset.role=speaker==='贴膜摊主'?'vendor':speaker==='陈姨'?'aunt':'grandma';$('caption').classList.toggle('on',!!line)}
 function setInfo(small,strong,confirm,visible){const sent=confirm==='转账成功';$('infoSmall').textContent=small;$('infoStrong').textContent=strong;$('infoConfirm').textContent=confirm;$('info').classList.toggle('on',visible);$('info').classList.toggle('sent',sent);$('info').querySelector('.transfer-top b').textContent=sent?'转账结果':'转账'}
 function progress(v){$('progress').style.width=Math.max(0,Math.min(100,v/54.18*100))+'%'}
-function playVideo(){$('flashbackTag').classList.toggle('on',!!scenes[sceneIndex]&&['E','F','G'].includes(scenes[sceneIndex].id));const p=$('video').play();if(p&&p.catch)p.catch(()=>{if(phase==='video'||phase==='loading')showResume('点一下继续播放');})}
+function playVideo(){$('flashbackTag').classList.toggle('on',!!scenes[sceneIndex]&&['E','F','G'].includes(scenes[sceneIndex].id));const p=$('video').play();if(p&&p.then)p.then(releaseFrame).catch(()=>{if(phase==='video'||phase==='loading')showResume('点一下继续播放')})}
 function showResume(text){$('video').pause();phase='paused';$('resumeText').textContent=text;$('resume').classList.add('on');$('pause').setAttribute('aria-label','继续播放')}
-function stopEndingVoice(){voiceToken++;const a=$('endingAudio');a.pause();a.onended=null;a.onerror=null;$('notice').dataset.reading=''}
-function playEndingVoice(takes,done){stopEndingVoice();const token=voiceToken,a=$('endingAudio');function next(i){if(token!==voiceToken)return;if(i>=takes.length){$('notice').dataset.reading='';if(done)done();return}const take=takes[i];let advanced=false;const finish=()=>{if(advanced||token!==voiceToken)return;advanced=true;next(i+1)};$('notice').dataset.reading=take.step||'';a.src='assets/'+take.file+'-grandma.wav';a.muted=$('video').muted;a.onended=finish;a.onerror=()=>setTimeout(finish,1200);a.load();const p=a.play();if(p&&p.catch)p.catch(()=>setTimeout(finish,1200))}next(0)}
+function stopEndingVoice(){voiceToken++;if(voiceNode){voiceNode.onended=null;try{voiceNode.stop()}catch{}voiceNode.disconnect();voiceNode=null}$('notice').dataset.reading=''}
+function playEndingVoice(takes,done){
+  stopEndingVoice();const token=voiceToken;
+  async function next(i){
+    if(token!==voiceToken)return;
+    if(i>=takes.length){$('notice').dataset.reading='';done?.();return}
+    const take=takes[i];$('notice').dataset.reading=take.step||'';
+    try{
+      const buffer=await loadVoice(take.file+'-grandma.wav');
+      if(token!==voiceToken)return;
+      if(voiceContext.state!=='running'){showVoiceResume(()=>playEndingVoice(takes.slice(i),done));return}
+      playVoiceBuffer(buffer,()=>next(i+1));
+    }catch(error){showVoiceResume(()=>{voiceLoads.delete(take.file+'-grandma.wav');playEndingVoice(takes.slice(i),done)})}
+  }
+  next(0);
+}
 function beginScene(i){clearTimeout(endingTimer);clearTimeout(bridgeTimer);clearTimeout(resolveTimer);clearTimeout(loadingTimer);stopEndingVoice();$('bridgeAudio').pause();$('bridge').classList.remove('on');$('resolve').classList.remove('on');$('flashbackTag').classList.remove('on');setInfo('','','',false);$('deviceAlert').classList.remove('on');$('notice').classList.remove('on');$('off').classList.remove('on','done','is-dragging');$('help').style.visibility='visible';$('endCard').style.display='none';$('endActions').classList.remove('on');if(i>=scenes.length){beginEnding();return}sceneIndex=i;phase='loading';advancing=false;const s=scenes[i],token=++loadToken,v=$('video');v.classList.remove('resolve-hold');let seekArmed=false;$('episode').textContent='第二关 · '+({AB:'手机失控与奶奶拦手',C:'远控仍在继续',D:'拦人报警',E:'半小时前',F:'控制权限',G:'手机自滑'}[s.id]);v.pause();v.style.display='block';v.onloadedmetadata=()=>{if(sceneIndex!==i||token!==loadToken||phase!=='loading')return;if(s.start>0.01){seekArmed=true;v.currentTime=s.start}else{phase='video';playVideo()}};v.onseeked=()=>{if(sceneIndex!==i||token!==loadToken||phase!=='loading'||!seekArmed)return;phase='video';playVideo()};v.src=s.src;v.load();playVideo();loadingTimer=setTimeout(()=>{if(token===loadToken&&(phase==='loading'||phase==='video')&&v.currentTime<s.start+.15)showResume('视频加载较慢，点一下重试播放')},12000)}
-function beginBridge(){phase='bridge';$('bridge').classList.add('on');progress(31.21);const a=$('bridgeAudio');a.pause();a.currentTime=0;a.muted=$('video').muted;const p=a.play();if(p&&p.catch)p.catch(()=>{});bridgeTimer=setTimeout(()=>beginScene(3),6700)}
+function beginBridge(){phase='bridge';$('bridge').classList.add('on');progress(31.21)}
 function beginResolve(){phase='resolve';$('video').classList.add('resolve-hold');$('flashbackTag').classList.remove('on');$('resolve').classList.add('on');setInfo('','','',false);$('deviceAlert').classList.remove('on');cap('','');progress(53.28);playEndingVoice([{file:'case-explanation'}],()=>{resolveTimer=setTimeout(beginEnding,350)})}
-function advance(){if(advancing||phase!=='video')return;advancing=true;$('video').pause();$('video').onseeked=null;cap('','');if(sceneIndex===1)beginInteraction();else if(sceneIndex===2)beginBridge();else if(sceneIndex===5)beginResolve();else beginScene(sceneIndex+1)}
-$('video').addEventListener('timeupdate',()=>{if(phase!=='video')return;const s=scenes[sceneIndex],t=Math.max(0,$('video').currentTime-s.start);progress(s.base+t);const cue=s.cues.find(c=>t>=c[0]&&t<c[1]);cap(cue?cue[2]:'',cue?cue[3]:'');if(s.id==='AB')setInfo('转账金额','¥4,800.00','确认转账',t>.7&&t<4.3);if(s.id==='C')setInfo('','','转账成功',t>=.5&&t<4.1);$('deviceAlert').classList.toggle('on',s.id==='C'&&t>=4.1);if($('video').currentTime>=s.end-.06)advance()});
+function advance(){
+  if(advancing||phase!=='video')return;
+  if(sceneIndex===0){sceneIndex=1;$('episode').textContent='第二关 · 远控仍在继续';return}
+  if(sceneIndex===2){cap('','');beginBridge();return}
+  if(sceneIndex===3||sceneIndex===4){sceneIndex++;$('episode').textContent='第二关 · '+(sceneIndex===4?'控制权限':'手机自滑');return}
+  advancing=true;freezeFrame();$('video').pause();$('video').onseeked=null;cap('','');
+  if(sceneIndex===1)beginInteraction();else if(sceneIndex===5)beginResolve();else beginScene(sceneIndex+1);
+}
+$('video').addEventListener('timeupdate',()=>{if(phase==='bridge'){if($('video').currentTime>=14.74-.04){sceneIndex=3;phase='video';$('bridge').classList.remove('on');$('flashbackTag').classList.add('on');$('episode').textContent='第二关 · 半小时前'}return}if(phase!=='video')return;const s=scenes[sceneIndex],t=Math.max(0,$('video').currentTime-s.start);progress(s.base+t);const cue=s.cues.find(c=>t>=c[0]&&t<c[1]);cap(cue?cue[2]:'',cue?cue[3]:'');if(s.id==='AB')setInfo('转账金额','¥4,800.00','确认转账',t>.7&&t<4.3);if(s.id==='C')setInfo('','','转账成功',t>=.5&&t<4.1);$('deviceAlert').classList.toggle('on',s.id==='C'&&t>=4.1);if($('video').currentTime>=s.end-.06)advance()});
 $('video').addEventListener('ended',advance);
-function beginInteraction(){phase='interact';$('video').style.display='none';$('deviceAlert').classList.remove('on');$('off').classList.add('on');$('off').classList.remove('done','is-dragging');$('phone').classList.remove('dark');$('timer').textContent='按住圆点，向右滑关机。';dragX=0;$('thumb').style.left='4px';$('fill').style.width='0';$('thumb').setAttribute('aria-valuenow','0');$('episode').textContent='第二关 · 关机处置';setInfo('','','',false);cap('奶奶','快关机，先断开他的手！');progress(20.17)}
+function beginInteraction(){phase='interact';$('video').style.display='none';$('holdFrame').hidden=true;$('deviceAlert').classList.remove('on');$('off').classList.add('on');$('off').classList.remove('done','is-dragging');$('phone').classList.remove('dark');$('timer').textContent='按住圆点，向右滑关机。';dragX=0;$('thumb').style.left='4px';$('fill').style.width='0';$('thumb').setAttribute('aria-valuenow','0');$('episode').textContent='第二关 · 关机处置';setInfo('','','',false);cap('奶奶','快关机，先断开他的手！');progress(20.17)}
 function moveThumb(clientX){const r=$('slider').getBoundingClientRect(),max=r.width-56;dragX=Math.max(0,Math.min(max,clientX-r.left-24));$('thumb').style.left=(4+dragX)+'px';$('fill').style.width=(dragX+53)+'px';$('thumb').setAttribute('aria-valuenow',String(Math.round(dragX/max*100)));if(dragX>=max*.9)completeInteraction()}
-function completeInteraction(){if(phase!=='interact')return;phase='interact-done';$('timer').textContent='关机成功，已断开远程控制。';$('off').classList.add('done');$('phone').classList.add('dark');$('thumb').style.left='calc(100% - 52px)';$('fill').style.width='100%';cap('奶奶','手机停了。别让他跑！');setTimeout(()=>beginScene(2),300)}
+function completeInteraction(){if(phase!=='interact')return;phase='interact-done';$('timer').textContent='关机成功，已断开远程控制。';$('off').classList.add('done');$('phone').classList.add('dark');$('thumb').style.left='calc(100% - 52px)';$('fill').style.width='100%';cap('奶奶','手机停了。别让他跑！')}
+function continueAfterInteraction(){if(phase!=='interact-done')return;beginScene(2);$('off').classList.add('on','done');setTimeout(()=>$('off').classList.remove('on'),300)}
 $('thumb').addEventListener('pointerdown',e=>{if(phase!=='interact')return;dragging=true;$('off').classList.add('is-dragging');$('thumb').setPointerCapture(e.pointerId)});
 $('thumb').addEventListener('pointermove',e=>{if(dragging&&phase==='interact')moveThumb(e.clientX)});
-$('thumb').addEventListener('pointerup',()=>{dragging=false;$('off').classList.remove('is-dragging');if(phase==='interact'){$('thumb').style.left='4px';$('fill').style.width='0';$('thumb').setAttribute('aria-valuenow','0');dragX=0}});$('thumb').addEventListener('pointercancel',()=>{dragging=false;$('off').classList.remove('is-dragging')});
-$('thumb').addEventListener('keydown',e=>{if(phase!=='interact')return;if(e.key==='ArrowRight'){e.preventDefault();const r=$('slider').getBoundingClientRect();moveThumb(r.left+24+dragX+24)}if(e.key==='End'||e.key==='Enter'||e.key===' '){e.preventDefault();completeInteraction()}});
+$('thumb').addEventListener('pointerup',()=>{dragging=false;$('off').classList.remove('is-dragging');if(phase==='interact-done'){continueAfterInteraction();return}if(phase==='interact'){$('thumb').style.left='4px';$('fill').style.width='0';$('thumb').setAttribute('aria-valuenow','0');dragX=0}});$('thumb').addEventListener('pointercancel',()=>{dragging=false;$('off').classList.remove('is-dragging')});
+$('thumb').addEventListener('keydown',e=>{if(phase!=='interact')return;if(e.key==='ArrowRight'){e.preventDefault();const r=$('slider').getBoundingClientRect();moveThumb(r.left+24+dragX+24);if(phase==='interact-done')continueAfterInteraction()}if(e.key==='End'||e.key==='Enter'||e.key===' '){e.preventDefault();completeInteraction();continueAfterInteraction()}});
 function beginEnding(){phase='finished';sceneIndex=6;$('video').pause();$('video').style.display='none';$('resolve').classList.remove('on');$('flashbackTag').classList.remove('on');$('endCard').style.display='none';$('notice').classList.add('on');$('deviceAlert').classList.remove('on');$('episode').textContent='第二关 · 防骗提醒';cap('','');setInfo('','','',false);progress(54.18);$('endActions').classList.add('on');playEndingVoice([{file:'safety-intro'},{file:'safety-one',step:'one'},{file:'safety-two',step:'two'},{file:'safety-three',step:'three'}])}
-$('startButton').onclick=()=>{$('start').style.display='none';beginScene(0)};
+$('startButton').onclick=()=>{voiceContext.resume().catch(()=>{});setTimeout(preloadVoices,3000);$('start').style.display='none';beginScene(0)};
 $('pause').onclick=()=>{if(phase==='video'){showResume('已暂停')}else if(phase==='paused'){$('resume').classList.remove('on');phase='video';$('pause').setAttribute('aria-label','暂停播放');playVideo()}};
-$('resumeButton').onclick=()=>{$('resume').classList.remove('on');phase=$('video').readyState<1?'loading':'video';$('pause').setAttribute('aria-label','暂停播放');playVideo()};
-$('sound').onclick=()=>{const muted=!$('video').muted;$('video').muted=muted;$('bridgeAudio').muted=muted;$('endingAudio').muted=muted;$('sound').setAttribute('aria-pressed',String(!muted));$('sound').setAttribute('aria-label',muted?'开启声音':'关闭声音');$('sound').querySelector('svg').innerHTML=muted?'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/>':'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>'};
+$('resumeButton').onclick=()=>{
+  if(phase==='voice-paused'){
+    const retry=voiceRetry;voiceRetry=null;voiceContext.resume().then(()=>{$('resume').classList.remove('on');retry?.()}).catch(()=>$('resumeText').textContent='旁白无法播放，请再点一次');
+    return;
+  }
+  $('resume').classList.remove('on');phase=$('video').readyState<1?'loading':'video';$('pause').setAttribute('aria-label','暂停播放');playVideo();
+};
+$('sound').onclick=()=>{const muted=!$('video').muted;$('video').muted=muted;voiceGain.gain.value=muted?0:1;$('sound').setAttribute('aria-pressed',String(!muted));$('sound').setAttribute('aria-label',muted?'开启声音':'关闭声音');$('sound').querySelector('svg').innerHTML=muted?'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/>':'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>'};
 let helpWasPlaying=false;
 $('help').onclick=()=>{if(phase==='interact'||phase==='interact-done')return;helpWasPlaying=phase==='video';if(helpWasPlaying)$('video').pause();$('helpPanel').classList.add('on')};
 $('helpClose').onclick=()=>{$('helpPanel').classList.remove('on');if(helpWasPlaying&&phase==='video')playVideo();helpWasPlaying=false};
