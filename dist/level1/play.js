@@ -162,19 +162,25 @@ function inArm(x,y) {
          (distanceToSegment(x,y,{x:282,y:425},{x:424,y:366}) < 88 ||
           distanceToSegment(x,y,{x:310,y:445},{x:399,y:390}) < 70);
 }
-function loadInteractionArt() {
+function loadInteractionArt(retry = false) {
   if (!interactionArtLoad) interactionArtLoad = (async () => {
     const root = 'play-assets/interaction/三帧对位-20261123/';
     const names = {
-      raised:'02-伸手帧-ATM斜面统一.png',
-      lowered:'03-收手帧-ATM斜面统一.png'
+      raised:'02-伸手帧-ATM斜面统一.jpg',
+      lowered:'03-收手帧-ATM斜面统一.jpg'
     };
     const entries = await Promise.all(Object.entries(names).map(async ([key,name]) => {
-      const img = new Image(); img.src = root+name; await img.decode();
+      const img = await new Promise((resolve,reject) => {
+        const image = new Image();
+        const timer = setTimeout(() => reject(new Error('互动图片加载超时')),15000);
+        image.onload = () => { clearTimeout(timer); resolve(image); };
+        image.onerror = () => { clearTimeout(timer); reject(new Error('互动图片加载失败')); };
+        image.src = root+name+(retry ? `?retry=${Date.now()}` : '?v=20261126-first-load-1');
+      });
       return [key,img];
     }));
     interactionArt = Object.fromEntries(entries);
-  })();
+  })().catch(error => { interactionArtLoad = null; throw error; });
   return interactionArtLoad;
 }
 const atmArtwork = new Map();
@@ -516,10 +522,32 @@ async function playBridge(currentRun) {
 }
 async function beginInteraction(currentRun) {
   if (currentRun !== runId) return;
-  videoCache.get('outro')?.load();
   phase = 'interaction-loading';
-  await loadInteractionArt();
+  const loadingTimer = setTimeout(() => {
+    if (currentRun !== runId || phase !== 'interaction-loading') return;
+    $('resumePanel').querySelector('p').textContent = '正在准备互动画面…';
+    $('resumeButton').hidden = true;
+    $('resumePanel').hidden = false;
+  },900);
+  try {
+    try { await loadInteractionArt(); }
+    catch { await loadInteractionArt(true); }
+  } catch {
+    clearTimeout(loadingTimer);
+    if (currentRun !== runId) return;
+    phase = 'interaction-error';
+    $('resumePanel').querySelector('p').textContent = '互动画面加载失败，请重试。';
+    $('resumeButton').hidden = false;
+    $('resumeButton').textContent = '重试互动';
+    $('resumePanel').hidden = false;
+    return;
+  }
+  clearTimeout(loadingTimer);
   if (currentRun !== runId) return;
+  $('resumePanel').hidden = true;
+  $('resumeButton').hidden = false;
+  $('resumeButton').textContent = '继续播放';
+  videoCache.get('outro')?.load();
   activeVideo.pause();
   phase = 'interaction';
   $('topbar').hidden = true;
@@ -646,7 +674,8 @@ function restart() {
   $('resumePanel').hidden = true; $('interaction').hidden = true; $('bridge').hidden = true; $('phoneStep').hidden = true; $('notice').hidden = true; $('notice').dataset.reading = '';
   $('topbar').hidden = true; $('progress').hidden = false; $('helpPanel').hidden = true;
   $('progressBar').style.width = '0%';
-  draggingArm = false; interactionProgress = 0;
+  draggingArm = false; pendingTouchCompletion = false; interactionProgress = 0;
+  $('resumeButton').hidden = false; $('resumeButton').textContent = '继续播放';
   setInfo(''); setTag(''); setCaption();
   const currentRun = runId;
   try {
@@ -687,6 +716,11 @@ function pausePlayback(showPanel = true) {
   return true;
 }
 async function resumePlayback() {
+  if (phase === 'interaction-error') {
+    $('resumePanel').hidden = true;
+    beginInteraction(runId);
+    return;
+  }
   if (!['paused','autoplay-blocked'].includes(phase)) return;
   try {
     if (phase === 'autoplay-blocked') activeVideo.load();
@@ -790,3 +824,4 @@ $('interactionCanvas').addEventListener('keydown', e => {
 
 // Decode all small stills and warm each video before the user reaches a cut.
 ensureMedia().catch(() => {});
+loadInteractionArt().catch(() => {});
