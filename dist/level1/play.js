@@ -22,9 +22,9 @@ let soundEnabled = true, pendingAutoplayResolve = null, helpWasPlaying = false;
 const voiceBuffers = new Map();
 const activeSources = new Set();
 const voiceLoads = new Map();
-// Keep the official reply as ordinary media so it also plays from a local
-// file preview, where fetch() cannot load the audio through Web Audio.
-const officialAudio = new Audio(voiceFiles.verify_official);
+// The official reply and grandma's notebook lines are one continuous track.
+// Starting it inside the button tap lets WeChat play the later reminder too.
+const officialAudio = new Audio('play-assets/audio/official-grandma-continuous.wav?v=20261126-notice-voice-1');
 officialAudio.preload = 'auto';
 function ensureVoices(names = voiceNames) {
   return Promise.all(names.map(name => {
@@ -400,6 +400,29 @@ function waitForVideoTime(video, target, currentRun) {
     check();
   });
 }
+function waitForAudioTime(audio, target, currentRun) {
+  return new Promise(resolve => {
+    let animationFrame, settled = false;
+    const finish = valid => {
+      if (settled) return;
+      settled = true;
+      audio.removeEventListener('timeupdate',check);
+      audio.removeEventListener('ended',check);
+      cancelAnimationFrame(animationFrame);
+      resolve(valid);
+    };
+    const check = () => {
+      if (currentRun !== runId) return finish(false);
+      if (audio.currentTime >= target - .025) return finish(true);
+      if (audio.ended) return finish(false);
+      cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(check);
+    };
+    audio.addEventListener('timeupdate',check);
+    audio.addEventListener('ended',check);
+    check();
+  });
+}
 function scheduleCues(cues, currentRun, partStart) {
   const video = activeVideo;
   for (const [at,id,role,line] of cues) {
@@ -635,7 +658,6 @@ async function contactOfficial() {
   phase = 'official';
   setCaption();
   document.body.dataset.playedVoices = [document.body.dataset.playedVoices,'verify_official'].filter(Boolean).join(',');
-  const finished = new Promise(resolve => officialAudio.addEventListener('ended',resolve,{once:true}));
   const lines = [
     [0,'何先生您好。'],
     [1.18,'您的贷款申请正在处理中。'],
@@ -643,15 +665,11 @@ async function contactOfficial() {
     [5.18,'请您切勿向任何人转账。']
   ];
   for (let i=0;i<lines.length;i++) {
-    if (i) await pause((lines[i][0]-lines[i-1][0])*1000,currentRun);
+    if (i && !await waitForAudioTime(officialAudio,lines[i][0],currentRun)) return;
     if (currentRun !== runId) return;
     setCaption('官方客服',lines[i][1],`official-${i+1}`);
   }
-  await finished;
-  if (currentRun !== runId) return;
-  setCaption();
-  await pause(600,currentRun);
-  if (currentRun === runId) beginNotice(currentRun);
+  if (await waitForAudioTime(officialAudio,7.8,currentRun)) beginNotice(currentRun);
 }
 function beginNotice(currentRun) {
   if (currentRun !== runId) return;
@@ -661,22 +679,21 @@ function beginNotice(currentRun) {
   setInfo(''); setTag(''); setCaption();
   $('notice').hidden = false;
   const tips = [
-    ['tip1','放款前要交解冻费，先别转。'],
-    ['tip2','看清收款人，个人账户不要转。'],
-    ['tip3','从原申请入口找官方客服核实。']
+    [10.8,'tip1','放款前要交解冻费，先别转。'],
+    [14.6569,'tip2','看清收款人，个人账户不要转。'],
+    [18.2085,'tip3','从原申请入口找官方客服核实。']
   ];
   (async () => {
-    await ensureVoices(['safety_intro','tip1','tip2','tip3']);
-    if (currentRun !== runId) return;
-    playVoice('safety_intro','奶奶','',currentRun,'',false);
-    await pause((voiceBuffers.get('safety_intro').duration+.2)*1000,currentRun);
+    document.body.dataset.playedVoices += ',safety_intro';
     for (let i=0;i<tips.length;i++) {
+      if (!await waitForAudioTime(officialAudio,tips[i][0],currentRun)) return;
       if (currentRun !== runId) return;
-      playVoice(tips[i][0],'奶奶',tips[i][1],currentRun,String(i+1));
-      const length = voiceBuffers.get(tips[i][0]).duration;
-      await pause((length+.2)*1000,currentRun);
+      $('notice').dataset.reading = String(i+1);
+      document.body.dataset.playedVoices += `,${tips[i][1]}`;
     }
-    if (currentRun === runId) { $('notice').dataset.reading = ''; setCaption(); }
+    if (await waitForAudioTime(officialAudio,officialAudio.duration-.05,currentRun) && currentRun === runId) {
+      $('notice').dataset.reading = '';
+    }
   })();
 }
 function restart() {
