@@ -196,6 +196,13 @@ video.media { display: none; }
 .interaction .operation-hint {
   animation: arm-guide-toast 3s linear infinite;
 }
+/* WeChat's viewport is taller than 9:16. Fill it instead of leaving dark bands. */
+@media (max-width: 700px) {
+  html, body, .workspace { width: 100%; height: 100dvh; min-height: 0; overflow: hidden; }
+  .workspace { display: block; padding: 0; }
+  .device { width: 100vw; max-width: none; height: 100dvh; max-height: none; aspect-ratio: auto; margin: 0; border: 0; border-radius: 0; }
+  .app > .media, #atmOverlay, .interaction canvas { object-fit: cover; }
+}
 @keyframes arm-guide-drag {
   0% { left: 86.5%; top: 41%; opacity: 0; transform: scale(1); }
   8%, 25% { left: 86.5%; top: 41%; opacity: 1; transform: scale(1); }

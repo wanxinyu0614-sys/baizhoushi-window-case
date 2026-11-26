@@ -150,7 +150,7 @@ const INTERACTION_W = 480, INTERACTION_H = 854;
 // lack a complete shoulder joint, so do not rotate them into the torso.
 const armTip = {x:423,y:360};
 const armDrop = {x:302,y:609};
-let interactionArtLoad, interactionArt, interactionProgress = 0, draggingArm = false, dragStart = null;
+let interactionArtLoad, interactionArt, interactionProgress = 0, draggingArm = false, dragStart = null, pendingTouchCompletion = false;
 function distanceToSegment(x,y,a,b) {
   const dx=b.x-a.x, dy=b.y-a.y;
   const t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy)));
@@ -273,7 +273,8 @@ function drawInteraction() {
 }
 function pointInArt(event) {
   const rect = $('interactionCanvas').getBoundingClientRect();
-  const scale = Math.min(rect.width/INTERACTION_W,rect.height/INTERACTION_H);
+  const fit = getComputedStyle($('interactionCanvas')).objectFit;
+  const scale = (fit === 'cover' ? Math.max : Math.min)(rect.width/INTERACTION_W,rect.height/INTERACTION_H);
   const cropX = (rect.width-INTERACTION_W*scale)/2;
   const cropY = (rect.height-INTERACTION_H*scale)/2;
   return {x:(event.clientX-rect.left-cropX)/scale,
@@ -301,7 +302,8 @@ function positionInfo() {
   const app = $('info').parentElement;
   const [sourceW,sourceH] = spec.source;
   const [x,y,w,h] = spec.rect;
-  const scale = Math.min(app.clientWidth/sourceW,app.clientHeight/sourceH);
+  const fit = getComputedStyle(activeVideo).objectFit;
+  const scale = (fit === 'cover' ? Math.max : Math.min)(app.clientWidth/sourceW,app.clientHeight/sourceH);
   const cropX = (app.clientWidth-sourceW*scale)/2;
   const cropY = (app.clientHeight-sourceH*scale)/2;
   const margin = 12;
@@ -332,7 +334,13 @@ function setInfo(key = '', mediaName = '') {
   el.className = `info ${I[key][0]}`; el.innerHTML = I[key][1];
   positionInfo();
 }
-window.addEventListener('resize',positionInfo);
+function syncMediaLayout() {
+  $('phoneStep').querySelector('.phone-top-fill').setAttribute('preserveAspectRatio',
+    matchMedia('(max-width: 700px)').matches ? 'xMidYMid slice' : 'xMidYMid meet');
+  positionInfo();
+}
+window.addEventListener('resize',syncMediaLayout);
+syncMediaLayout();
 function setTag(label = '', bridge = false) {
   const el = $('timeTag'); el.hidden = !label;
   el.textContent = label; el.classList.toggle('bridge',bridge);
@@ -741,10 +749,33 @@ $('interactionCanvas').addEventListener('pointerup', e => {
   $('interaction').classList.remove('is-dragging');
   e.currentTarget.classList.remove('dragging');
   if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-  if (interactionProgress >= .78 || reachedDrop) completeInteraction();
-  else setInteractionProgress(0);
+  if (interactionProgress >= .78 || reachedDrop) {
+    // iOS WebKit recognizes touchend as the gesture that may start audible video.
+    // pointerup alone can show the manual "continue playing" dialog in WeChat.
+    if (e.pointerType === 'touch') pendingTouchCompletion = true;
+    else completeInteraction();
+  } else setInteractionProgress(0);
 });
+$('interactionCanvas').addEventListener('touchend', e => {
+  if (phase !== 'interaction') return;
+  const touch = e.changedTouches[0];
+  const point = touch && pointInArt(touch);
+  const reachedDrop = draggingArm && dragStart && point &&
+    point.y-dragStart.y >= 100 && point.x >= 230 && point.x <= 385 &&
+    point.y >= 500 && point.y <= 720;
+  if (pendingTouchCompletion || (draggingArm && (interactionProgress >= .78 || reachedDrop))) {
+    e.preventDefault();
+    pendingTouchCompletion = false;
+    draggingArm = false;
+    dragStart = null;
+    $('interaction').classList.remove('is-dragging');
+    e.currentTarget.classList.remove('dragging');
+    completeInteraction();
+  }
+}, {passive:false});
 $('interactionCanvas').addEventListener('pointercancel',e => {
+  if (phase !== 'interaction') return;
+  pendingTouchCompletion = false;
   draggingArm = false; dragStart = null; $('interaction').classList.remove('is-dragging'); e.currentTarget.classList.remove('dragging'); setInteractionProgress(0);
 });
 $('interactionCanvas').addEventListener('keydown', e => {
