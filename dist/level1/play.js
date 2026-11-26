@@ -22,6 +22,10 @@ let soundEnabled = true, pendingAutoplayResolve = null, helpWasPlaying = false;
 const voiceBuffers = new Map();
 const activeSources = new Set();
 const voiceLoads = new Map();
+// Keep the official reply as ordinary media so it also plays from a local
+// file preview, where fetch() cannot load the audio through Web Audio.
+const officialAudio = new Audio(voiceFiles.verify_official);
+officialAudio.preload = 'auto';
 function ensureVoices(names = voiceNames) {
   return Promise.all(names.map(name => {
     if (!voiceLoads.has(name)) voiceLoads.set(name,(async () => {
@@ -29,7 +33,7 @@ function ensureVoices(names = voiceNames) {
         .catch(error => { throw new Error(`配音请求失败：${name}（${error.message}）`); });
       if (!response.ok) throw new Error(`配音加载失败：${name}`);
       voiceBuffers.set(name, await audioContext.decodeAudioData(await response.arrayBuffer()));
-    })());
+    })().catch(error => { voiceLoads.delete(name); throw error; }));
     return voiceLoads.get(name);
   }));
 }
@@ -572,52 +576,66 @@ async function completeInteraction() {
 }
 async function beginPhoneStep(currentRun) {
   if (currentRun !== runId) return;
-  phase = 'phone-loading';
+  phase = 'phone';
   setInfo(''); setTag(''); setCaption();
   const phone = videoCache.get('phone');
-  ensureVoices(['verify_official']).catch(() => {});
-  try {
-    phone.muted = true;
-    await phone.play();
-    await videoLoads.get('phone');
-    if (currentRun !== runId) return;
-    if (phone.requestVideoFrameCallback) await Promise.race([
-      new Promise(resolve => phone.requestVideoFrameCallback(resolve)),
-      new Promise(resolve => setTimeout(resolve,300))
-    ]);
-  } catch (error) {
-    if (currentRun !== runId) return;
-    phase = 'load-error';
-    $('startPanel').querySelector('p').textContent = error.message || '手机画面加载失败，请重试。';
-    $('startButton').textContent = '重试播放';
-    $('startPanel').hidden = false;
-    return;
-  }
-  if (currentRun !== runId) return;
   activeVideo.pause(); activeVideo.style.display = 'none';
   activeVideo = phone;
-  phone.style.display = 'block';
+  $('phonePoster').hidden = false;
   $('still').style.display = 'none';
   $('topbar').hidden = true;
   $('progressBar').style.width = '94%';
   $('phoneCallButton').hidden = false;
   $('phoneGesture').hidden = false;
+  $('phoneHint').textContent = '点按「联系官方客服」';
   $('phoneHint').hidden = false;
   $('phoneStep').hidden = false;
-  phase = 'phone';
+  officialAudio.load();
+  phone.muted = true;
+  phone.style.display = 'block';
+  // The still and button are usable even if WeChat delays or refuses the muted loop.
+  try {
+    await playbackDeadline(phone.play(),8000);
+    await videoLoads.get('phone');
+    if (currentRun !== runId || !['phone','official-loading','official'].includes(phase)) return;
+    if (phone.requestVideoFrameCallback) await Promise.race([
+      new Promise(resolve => phone.requestVideoFrameCallback(resolve)),
+      new Promise(resolve => setTimeout(resolve,300))
+    ]);
+    if (currentRun === runId && !$('phoneStep').hidden) $('phonePoster').hidden = true;
+  } catch {
+    phone.pause(); phone.style.display = 'none';
+  }
 }
 async function contactOfficial() {
   if (phase !== 'phone') return;
   const currentRun = runId;
-  phase = 'official';
+  phase = 'official-loading';
   $('phoneCallButton').hidden = true;
   $('phoneGesture').hidden = true;
   $('phoneHint').hidden = true;
-  await audioContext.resume();
-  await ensureVoices(['verify_official']);
+  setCaption('官方客服','正在连接官方客服…','official-connecting');
+  try {
+    officialAudio.currentTime = 0;
+    officialAudio.muted = !soundEnabled;
+    // Start directly inside the tap gesture, as required by iPhone browsers.
+    await playbackDeadline(officialAudio.play(),12000);
+  } catch {
+    if (currentRun !== runId) return;
+    officialAudio.pause();
+    phase = 'phone';
+    setCaption();
+    $('phoneHint').textContent = '暂未接通，点按重试';
+    $('phoneCallButton').hidden = false;
+    $('phoneGesture').hidden = false;
+    $('phoneHint').hidden = false;
+    return;
+  }
   if (currentRun !== runId) return;
-  const source = playVoice('verify_official','官方客服','',currentRun,'',false);
-  const finished = new Promise(resolve => source.addEventListener('ended',resolve,{once:true}));
+  phase = 'official';
+  setCaption();
+  document.body.dataset.playedVoices = [document.body.dataset.playedVoices,'verify_official'].filter(Boolean).join(',');
+  const finished = new Promise(resolve => officialAudio.addEventListener('ended',resolve,{once:true}));
   const lines = [
     [0,'何先生您好。'],
     [1.18,'您的贷款申请正在处理中。'],
@@ -638,7 +656,7 @@ async function contactOfficial() {
 function beginNotice(currentRun) {
   if (currentRun !== runId) return;
   phase = 'notice'; activeVideo.pause(); activeVideo.style.display = 'none';
-  $('topbar').hidden = true; $('phoneStep').hidden = true;
+  $('topbar').hidden = true; $('phoneStep').hidden = true; $('phonePoster').hidden = true;
   $('progressBar').style.width = '100%';
   setInfo(''); setTag(''); setCaption();
   $('notice').hidden = false;
@@ -663,6 +681,8 @@ function beginNotice(currentRun) {
 }
 function restart() {
   runId++; clearTimers();
+  officialAudio.pause();
+  officialAudio.currentTime = 0;
   pendingAutoplayResolve = null;
   const startButton = $('startButton');
   startButton.disabled = true;
@@ -671,7 +691,7 @@ function restart() {
   for (const source of activeSources) { try { source.stop(); } catch {} }
   activeSources.clear();
   activeVideo.pause(); activeVideo.style.display = 'none'; $('still').style.display = 'block';
-  $('resumePanel').hidden = true; $('interaction').hidden = true; $('bridge').hidden = true; $('phoneStep').hidden = true; $('notice').hidden = true; $('notice').dataset.reading = '';
+  $('resumePanel').hidden = true; $('interaction').hidden = true; $('bridge').hidden = true; $('phoneStep').hidden = true; $('phonePoster').hidden = true; $('notice').hidden = true; $('notice').dataset.reading = '';
   $('topbar').hidden = true; $('progress').hidden = false; $('helpPanel').hidden = true;
   $('progressBar').style.width = '0%';
   draggingArm = false; pendingTouchCompletion = false; interactionProgress = 0;
@@ -741,6 +761,7 @@ $('resumeButton').onclick = resumePlayback;
 $('soundButton').onclick = () => {
   soundEnabled = !soundEnabled;
   masterGain.gain.value = soundEnabled ? 1 : 0;
+  officialAudio.muted = !soundEnabled;
   for (const [name,video] of videoCache) video.muted = name === 'phone' || !soundEnabled;
   $('soundButton').setAttribute('aria-pressed',String(soundEnabled));
   $('soundButton').setAttribute('aria-label',soundEnabled ? '关闭声音' : '开启声音');
