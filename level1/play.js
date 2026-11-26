@@ -1,20 +1,20 @@
 const $ = id => document.getElementById(id);
 let openingPosterFallback = false;
-const localOpeningPoster = 'play-assets/stills/首尾帧/S01-用户合成首帧-mobile.webp?v=20261126-opening-sharp-2';
+const localOpeningPoster = 'play-assets/stills/首尾帧/S01-清晰重绘.webp?v=20261126-sharp-v2';
 const frame = name => name.includes('S01-用户合成首帧-mobile')
-  ? (openingPosterFallback ? localOpeningPoster : fastAssetRoot + 'play-assets/stills/opening-fast.dat')
+  ? (openingPosterFallback ? localOpeningPoster : fastAssetRoot + 'play-assets/stills/opening-sharp-v2.dat')
   : `play-assets/stills/${name}${/\.(png|webp)$/.test(name) ? '' : '.webp'}`;
 const originalVideoFile = name => ({
   intro:'play-assets/video-composed/intro-user-1122-opening-name-fixed-mobile.mp4',
   outro:'play-assets/video-composed/outro-memory-mobile.mp4',
   phone:'play-assets/video-composed/original-app-phone-loop.mp4'
 }[name]) + '?v=20261125-mobile-2';
-const fastAssetRoot = 'https://cdn.jsdelivr.net/gh/wanxinyu0614-sys/baizhoushi-window-case@cd38889973c65148e2753ff5ff629700222245d0/level1/';
+const fastAssetRoot = 'https://cdn.jsdelivr.net/gh/wanxinyu0614-sys/baizhoushi-window-case@3a929500c36a71e67c80efc37e4e2314d301ff75/level1/';
 const videoCdn = fastAssetRoot + 'play-assets/video-composed/';
 const hevcSupported = !!document.createElement('video').canPlayType('video/mp4; codecs="hvc1"');
 const videoSources = name => ({
   intro: [
-    ...(hevcSupported ? [videoCdn + 'intro-opening-hevc-mobile.dat'] : []),
+    ...(hevcSupported ? [videoCdn + 'intro-opening-sharp-720.dat'] : []),
     videoCdn + 'intro-user-1122-opening-name-fixed-mobile-lite.dat',
     originalVideoFile('intro')
   ],

@@ -7,7 +7,7 @@
 .help-panel:not([hidden]) { display: flex; }
 .start {
   background-color: #17251e;
-  background-image: linear-gradient(#0002, transparent 40%, #08110a9c), url('https://cdn.jsdelivr.net/gh/wanxinyu0614-sys/baizhoushi-window-case@cd38889973c65148e2753ff5ff629700222245d0/level1/play-assets/stills/opening-fast.dat');
+  background-image: linear-gradient(#0002, transparent 40%, #08110a9c), url('https://cdn.jsdelivr.net/gh/wanxinyu0614-sys/baizhoushi-window-case@3a929500c36a71e67c80efc37e4e2314d301ff75/level1/play-assets/stills/opening-sharp-v2.dat');
   background-position: center;
   background-size: cover, cover;
   background-repeat: no-repeat;
