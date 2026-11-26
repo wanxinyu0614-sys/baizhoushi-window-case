@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const frame = name => `play-assets/stills/${name}${/\.(png|webp)$/.test(name) ? '' : '.webp'}`;
+const frame = name => `play-assets/stills/${name}${/\.(png|webp)$/.test(name) ? '' : '.webp'}${name.includes('S01-用户合成首帧-mobile') ? '?v=20261126-opening-sharp-2' : ''}`;
 const videoFile = name => ({
   intro:'play-assets/video-composed/intro-user-1122-opening-name-fixed-mobile.mp4',
   outro:'play-assets/video-composed/outro-memory-mobile.mp4',
@@ -107,7 +107,7 @@ function ensureMedia() {
   const openingPoster = '首尾帧/S01-用户合成首帧-mobile.webp';
   const img = new Image(); img.src = frame(openingPoster); stillCache.set(openingPoster,img);
   const posterReady = img.decode().catch(() => { throw new Error(`图片加载失败：${openingPoster}`); });
-  ['intro','outro','phone'].forEach(name => {
+  ['intro','phone'].forEach(name => {
     const video = document.createElement('video');
     video.className = 'media'; video.muted = name === 'phone' || !soundEnabled; video.playsInline = true;
     video.setAttribute('webkit-playsinline','');
@@ -116,7 +116,7 @@ function ensureMedia() {
     video.preload = name === 'intro' ? 'auto' : 'none'; video.style.display = 'none';
     video.addEventListener('timeupdate',() => {
       if (video !== activeVideo || !['scene','paused'].includes(phase)) return;
-      const base = name === 'intro' ? 0 : name === 'outro' ? 9 : 14;
+      const base = video.dataset.segment === 'intro' ? 0 : video.dataset.segment === 'outro' ? 9 : 14;
       const elapsed = base + video.currentTime;
       $('progressBar').style.width = `${Math.min(100,elapsed / 48 * 100)}%`;
     });
@@ -131,12 +131,30 @@ function ensureMedia() {
     videoLoads.set(name,ready);
     ready.catch(() => {});
   });
-  // The bank scene, time bridge and memory share one audible video element.
-  videoCache.set('memory',videoCache.get('outro'));
-  videoLoads.set('memory',videoLoads.get('outro'));
+  // Reuse the unlocked audible element after the hand drag. iPhone WeChat can
+  // reject play() on a second audible element even when touchend started it.
+  videoCache.set('outro',videoCache.get('intro'));
+  videoCache.set('memory',videoCache.get('intro'));
   // Do not gate play() on loadeddata: iOS may wait for play() before loading media.
   mediaLoad = posterReady;
   return mediaLoad;
+}
+
+function prepareOutro() {
+  const video = videoCache.get('intro');
+  if (video.dataset.segment === 'outro' && videoLoads.has('outro')) return;
+  video.pause();
+  video.dataset.segment = 'outro';
+  const ready = new Promise((resolve,reject) => {
+    video.addEventListener('loadeddata',resolve,{once:true});
+    video.addEventListener('error',() => reject(new Error('视频加载失败：outro')),{once:true});
+  });
+  videoLoads.set('outro',ready);
+  videoLoads.set('memory',ready);
+  ready.catch(() => {});
+  video.src = videoFile('outro');
+  video.preload = 'auto';
+  video.load();
 }
 
 let runId = 0, phase = 'ready', currentSceneIndex = -1, sequenceElapsed = 0, timers = [], activeCaption = '';
@@ -583,8 +601,8 @@ async function beginInteraction(currentRun) {
   $('resumePanel').hidden = true;
   $('resumeButton').hidden = false;
   $('resumeButton').textContent = '继续播放';
-  videoCache.get('outro')?.load();
   activeVideo.pause();
+  prepareOutro();
   phase = 'interaction';
   $('topbar').hidden = true;
   $('still').style.display = 'none';
@@ -735,6 +753,17 @@ function restart() {
       video.style.transform = '';
     }
     const intro = videoCache.get('intro');
+    if (intro.dataset.segment !== 'intro') {
+      intro.dataset.segment = 'intro';
+      intro.src = videoFile('intro');
+      intro.load();
+      const ready = new Promise((resolve,reject) => {
+        intro.addEventListener('loadeddata',resolve,{once:true});
+        intro.addEventListener('error',() => reject(new Error('视频加载失败：intro')),{once:true});
+      });
+      videoLoads.set('intro',ready);
+      ready.catch(() => {});
+    }
     if (intro.readyState >= 1) intro.currentTime = 0;
     document.body.dataset.audioState = audioContext.state;
     document.body.dataset.loadedVoices = String(voiceBuffers.size);

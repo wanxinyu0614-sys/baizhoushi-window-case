@@ -7,9 +7,9 @@
 .help-panel:not([hidden]) { display: flex; }
 .start {
   background-color: #17251e;
-  background-image: linear-gradient(#0002, transparent 40%, #08110a9c), url('play-assets/stills/首尾帧/S01-用户合成首帧-mobile.webp');
+  background-image: linear-gradient(#0002, transparent 40%, #08110a9c), url('play-assets/stills/首尾帧/S01-用户合成首帧-mobile.webp?v=20261126-opening-sharp-2');
   background-position: center;
-  background-size: cover, contain;
+  background-size: cover, cover;
   background-repeat: no-repeat;
 }
 .start h1 { font-size: 27px; letter-spacing: 0; }

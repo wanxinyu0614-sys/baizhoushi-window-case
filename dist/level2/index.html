@@ -22,7 +22,7 @@
 <div class="device">
 <main class="app" aria-label="奶奶侦探第二关：贴膜惊魂">
   <div class="progress"><i id="progress"></i></div>
-  <video id="video" class="media" playsinline webkit-playsinline preload="auto" poster="assets/ab-opening-poster.jpg"></video>
+  <video id="video" class="media" playsinline webkit-playsinline preload="auto" poster="assets/ab-opening-poster.jpg" src="assets/ab-c-mobile.mp4"></video>
   <canvas id="holdFrame" class="media" width="480" height="854" hidden aria-hidden="true"></canvas>
   <div id="loadingNote" class="loading-note" role="status" hidden>视频加载中，请稍候…</div>
   <audio id="bridgeAudio" src="assets/bridge-narration-grandma-clone.wav" preload="none"></audio>
@@ -159,7 +159,9 @@ function beginScene(i){
     if(sceneIndex===i&&token===loadToken&&['loading','video'].includes(phase))
       showResume('视频加载失败，请点下方重试')
   };
-  v.src=s.src;v.load();playVideo();
+  if(v.getAttribute('src')!==s.src){v.src=s.src;v.load();playVideo()}
+  else if(v.readyState>=1)v.onloadedmetadata();
+  else playVideo();
   // Slow mobile downloads must keep buffering; pausing here strands WeChat users.
   loadingTimer=setTimeout(()=>{
     if(token===loadToken&&['loading','video'].includes(phase)&&v.currentTime<s.start+.15)
