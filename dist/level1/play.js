@@ -469,14 +469,22 @@ async function beginSequence(name, poster, currentRun, start = 0) {
   if (start && v.readyState >= 1) v.currentTime = start;
   // This call must occur before the first await when the user taps Start.
   const playback = v.play();
-  try { await playbackDeadline(playback); }
+  const loadingTimer = setTimeout(() => {
+    if (currentRun === runId && phase === 'scene' && v.currentTime < start + .15)
+      $('loadingNote').hidden = false;
+  },3500);
+  try { await playbackDeadline(playback,60000); }
   catch (error) {
+    clearTimeout(loadingTimer);
+    $('loadingNote').hidden = true;
     v.pause();
     phase = 'autoplay-blocked';
     $('resumePanel').querySelector('p').textContent = error?.message === '视频加载超时' ? '视频加载较慢，点一下重试播放。' : '点一下播放视频。';
     $('resumePanel').hidden = false;
     await new Promise(resolve => { pendingAutoplayResolve = resolve; });
   }
+  clearTimeout(loadingTimer);
+  $('loadingNote').hidden = true;
   await Promise.all([posterReady,videoLoads.get(name)]);
   if (currentRun !== runId) return false;
   if (v.requestVideoFrameCallback) await Promise.race([
@@ -511,6 +519,7 @@ async function playScene(index,currentRun) {
     } catch (error) {
       if (currentRun !== runId) return;
       phase = 'load-error';
+      $('loadingNote').hidden = true;
       $('topbar').hidden = true;
       $('startPanel').querySelector('p').textContent = error.message || '视频加载失败，请刷新页面重试。';
       $('startButton').textContent = '重试播放';
@@ -600,6 +609,7 @@ async function completeInteraction() {
 async function beginPhoneStep(currentRun) {
   if (currentRun !== runId) return;
   phase = 'phone';
+  $('loadingNote').hidden = true;
   setInfo(''); setTag(''); setCaption();
   const phone = videoCache.get('phone');
   activeVideo.pause(); activeVideo.style.display = 'none';
@@ -674,6 +684,7 @@ async function contactOfficial() {
 function beginNotice(currentRun) {
   if (currentRun !== runId) return;
   phase = 'notice'; activeVideo.pause(); activeVideo.style.display = 'none';
+  $('loadingNote').hidden = true;
   $('topbar').hidden = true; $('phoneStep').hidden = true; $('phonePoster').hidden = true;
   $('progressBar').style.width = '100%';
   setInfo(''); setTag(''); setCaption();
@@ -709,6 +720,7 @@ function restart() {
   activeSources.clear();
   activeVideo.pause(); activeVideo.style.display = 'none'; $('still').style.display = 'block';
   $('resumePanel').hidden = true; $('interaction').hidden = true; $('bridge').hidden = true; $('phoneStep').hidden = true; $('phonePoster').hidden = true; $('notice').hidden = true; $('notice').dataset.reading = '';
+  $('loadingNote').hidden = true;
   $('topbar').hidden = true; $('progress').hidden = false; $('helpPanel').hidden = true;
   $('progressBar').style.width = '0%';
   draggingArm = false; pendingTouchCompletion = false; interactionProgress = 0;

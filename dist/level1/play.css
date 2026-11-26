@@ -217,3 +217,5 @@ video.media { display: none; }
   32%, 85% { opacity: 0; }
   100% { opacity: 1; }
 }
+.loading-note { position:absolute; z-index:10; left:50%; bottom:7%; transform:translateX(-50%); width:max-content; max-width:86%; padding:9px 13px; border:1px solid #ffffff75; border-radius:8px; background:#111719ed; box-shadow:0 4px 11px #0008; color:#fff; font-size:13px; font-weight:700; pointer-events:none; }
+.loading-note[hidden] { display:none; }

@@ -8,7 +8,7 @@
 :root{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft Yahei",sans-serif;color:#fff;background:#101722}*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center}.app{position:relative;width:min(100vw,430px,calc(100dvh * 9 / 16));height:min(100dvh,calc(100vw * 16 / 9),765px);min-height:520px;background:#161b21;overflow:hidden;box-shadow:0 24px 70px #0009}.media,.still,.end-card{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.media{background:#191c20}.still{opacity:0;pointer-events:none;transform:scale(1);transition:opacity .12s linear;will-change:opacity,transform}.topbar{position:absolute;z-index:6;top:0;left:0;right:0;padding:calc(15px + env(safe-area-inset-top)) 17px 20px;background:linear-gradient(#101923bb,transparent);display:flex;align-items:center;gap:10px}.brand{font-size:12px;letter-spacing:.08em;font-weight:800;color:#fff8db}.episode{font-size:12px;opacity:.8;margin-left:auto}.icon{border:1px solid #fff8;border-radius:999px;background:#1119;color:#fff;width:33px;height:33px;display:grid;place-items:center;font-size:14px;cursor:pointer}.progress{position:absolute;z-index:8;top:0;left:0;width:100%;height:4px;background:#ffffff45}.progress i{display:block;height:100%;width:0;background:#ffd45e;transition:width .1s linear}.shade{position:absolute;z-index:2;inset:45% 0 0;background:linear-gradient(transparent,#11182338 38%,#101821bd 100%);pointer-events:none}.caption{position:absolute;z-index:5;left:16px;right:16px;bottom:calc(42px + env(safe-area-inset-bottom));display:none;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid #ffffff35;border-radius:13px;background:#172330d9;box-shadow:0 8px 25px #0005;backdrop-filter:blur(9px)}.caption.on{display:flex}.speaker{flex:0 0 auto;color:#ffd56e;font-weight:800;font-size:14px}.line{font-size:17px;line-height:1.38;font-weight:650}.info{position:absolute;z-index:4;top:19%;left:50%;transform:translateX(-50%);width:min(85%,360px);padding:11px 15px;border-radius:14px;background:#fffffff2;box-shadow:0 10px 25px #0006;color:#1a252d;text-align:left;opacity:0;transition:opacity .18s;pointer-events:none}.info.on{opacity:1}.info small{display:block;color:#596879;font-size:12px}.info strong{display:block;margin-top:2px;font-size:20px}.info .confirm{display:block;margin-top:7px;color:#bb312f;font-weight:800;font-size:13px}.start,.resume{position:absolute;z-index:12;inset:0;background:linear-gradient(#192637bf,#111a22ee),url('assets/b-2-mobile.webp') center/cover;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;padding:34px 26px calc(48px + env(safe-area-inset-bottom))}.start .kicker{font-size:14px;font-weight:700;letter-spacing:.17em;color:#ffdc79}.start h1{margin:12px 0 8px;font-size:41px;line-height:1.13}.start p{font-size:16px;line-height:1.55;color:#f1f0e9;margin:0 0 28px}.primary{width:100%;border:0;border-radius:13px;background:#ffd35e;color:#222d33;padding:16px;font:800 18px inherit;cursor:pointer}.start .note{margin-top:11px;font-size:12px;color:#d9e1e4}.resume{display:none;background:#0d1825dc;align-items:center;justify-content:center;text-align:center}.resume.on{display:flex}.resume p{font-size:19px;font-weight:750}.end-card{display:none;z-index:3}.off{position:absolute;z-index:10;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;padding:24px;background:radial-gradient(circle at 50% 33%,#53708a,#111822 62%)}.off.on{display:flex}.off h2{font-size:24px;margin:0 0 7px}.off p{font-size:15px;color:#e4edf3;margin:0 0 30px;text-align:center}.phone{position:relative;width:min(82%,272px);aspect-ratio:9/16;border:9px solid #2e343c;border-radius:39px;background:linear-gradient(145deg,#1a4166,#3c6f9b 55%,#092b4e);box-shadow:0 20px 50px #0009,inset 0 0 0 2px #65717d;padding:25px 15px;display:flex;align-items:center}.phone:before{content:"";position:absolute;top:10px;left:50%;transform:translateX(-50%);width:72px;height:14px;border-radius:99px;background:#18232f}.phone.dark{background:#080d13;transition:background .28s}.phone.dark .slider{opacity:0}.slider{position:relative;width:100%;height:58px;border-radius:99px;background:#28313b;border:1px solid #ffffff30;touch-action:none;overflow:hidden}.slider .fill{position:absolute;inset:0 auto 0 0;width:0;background:#99adc74d}.slider .label{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:15px;font-weight:700;pointer-events:none}.thumb{position:absolute;z-index:2;left:4px;top:4px;width:48px;height:48px;border-radius:50%;background:#eef0f3;box-shadow:0 2px 6px #0005;cursor:grab;touch-action:none}.off .timer{margin-top:23px;color:#e4dca9;font-size:13px}.end-actions{position:absolute;z-index:11;left:25px;right:25px;bottom:calc(45px + env(safe-area-inset-bottom));display:none}.end-actions.on{display:block}.end-actions button{width:100%;padding:13px;border:1px solid #fff8;border-radius:11px;background:#12202dc9;color:#fff;font:700 15px inherit;cursor:pointer}@media(max-height:620px){.caption{bottom:14px}.start h1{font-size:32px}.start{padding-bottom:26px}.off p{margin-bottom:15px}.phone{width:66%}}
 </style>
 <link rel="stylesheet" href="./legacy-ui.css?v=2">
-<link rel="stylesheet" href="./refinement.css?v=20261125-gesture-demo1">
+<link rel="stylesheet" href="./refinement.css?v=20261126-mobile-loading-1">
 </head>
 <body>
 <div class="workspace">
@@ -22,8 +22,9 @@
 <div class="device">
 <main class="app" aria-label="奶奶侦探第二关：贴膜惊魂">
   <div class="progress"><i id="progress"></i></div>
-  <video id="video" class="media" playsinline webkit-playsinline preload="auto"></video>
+  <video id="video" class="media" playsinline webkit-playsinline preload="auto" poster="assets/ab-opening-poster.jpg"></video>
   <canvas id="holdFrame" class="media" width="480" height="854" hidden aria-hidden="true"></canvas>
+  <div id="loadingNote" class="loading-note" role="status" hidden>视频加载中，请稍候…</div>
   <audio id="bridgeAudio" src="assets/bridge-narration-grandma-clone.wav" preload="none"></audio>
   <audio id="endingAudio" preload="auto"></audio>
   <img id="endCard" class="end-card" src="assets/ending.png" alt="贴膜不用给控制权限。手机失控先断联，钱转走找银行、报警。">
@@ -69,7 +70,7 @@ const scenes=[
   {id:'F',src:'assets/d-memory-mobile.mp4',start:21.77,end:26.77,base:44.94,cues:[[0.05,2.15,'贴膜摊主','点一下允许，不然没法测。']]},
   {id:'G',src:'assets/d-memory-mobile.mp4',start:26.77,end:30.10,base:49.95,cues:[]}
 ];
-let sceneIndex=-1,phase='ready',advancing=false,loadToken=0,dragging=false,dragX=0,endingTimer=0,bridgeTimer=0,resolveTimer=0,loadingTimer=0,voiceToken=0;
+let sceneIndex=-1,phase='ready',advancing=false,loadToken=0,dragging=false,dragX=0,endingTimer=0,bridgeTimer=0,resolveTimer=0,loadingTimer=0,slowTimer=0,voiceToken=0;
 const voiceContext=new (window.AudioContext||window.webkitAudioContext)();
 const voiceGain=voiceContext.createGain();voiceGain.connect(voiceContext.destination);
 const voiceBuffers=new Map(),voiceLoads=new Map();
@@ -110,7 +111,7 @@ function cap(speaker,line){$('speaker').textContent=speaker||'';$('line').textCo
 function setInfo(small,strong,confirm,visible){const sent=confirm==='转账成功';$('infoSmall').textContent=small;$('infoStrong').textContent=strong;$('infoConfirm').textContent=confirm;$('info').classList.toggle('on',visible);$('info').classList.toggle('sent',sent);$('info').querySelector('.transfer-top b').textContent=sent?'转账结果':'转账'}
 function progress(v){$('progress').style.width=Math.max(0,Math.min(100,v/54.18*100))+'%'}
 function playVideo(){$('flashbackTag').classList.toggle('on',!!scenes[sceneIndex]&&['E','F','G'].includes(scenes[sceneIndex].id));const p=$('video').play();if(p&&p.then)p.then(releaseFrame).catch(()=>{if(phase==='video'||phase==='loading')showResume('点一下继续播放')})}
-function showResume(text){$('video').pause();phase='paused';$('resumeText').textContent=text;$('resume').classList.add('on');$('pause').setAttribute('aria-label','继续播放')}
+function showResume(text){clearTimeout(loadingTimer);clearTimeout(slowTimer);$('loadingNote').hidden=true;$('video').pause();phase='paused';$('resumeText').textContent=text;$('resume').classList.add('on');$('pause').setAttribute('aria-label','继续播放')}
 function stopEndingVoice(){voiceToken++;if(voiceNode){voiceNode.onended=null;try{voiceNode.stop()}catch{}voiceNode.disconnect();voiceNode=null}$('notice').dataset.reading=''}
 function playEndingVoice(takes,done){
   stopEndingVoice();const token=voiceToken;
@@ -127,7 +128,48 @@ function playEndingVoice(takes,done){
   }
   next(0);
 }
-function beginScene(i){clearTimeout(endingTimer);clearTimeout(bridgeTimer);clearTimeout(resolveTimer);clearTimeout(loadingTimer);stopEndingVoice();$('bridgeAudio').pause();$('bridge').classList.remove('on');$('resolve').classList.remove('on');$('flashbackTag').classList.remove('on');setInfo('','','',false);$('deviceAlert').classList.remove('on');$('notice').classList.remove('on');$('off').classList.remove('on','done','is-dragging');$('help').style.visibility='visible';$('endCard').style.display='none';$('endActions').classList.remove('on');if(i>=scenes.length){beginEnding();return}sceneIndex=i;phase='loading';advancing=false;const s=scenes[i],token=++loadToken,v=$('video');v.classList.remove('resolve-hold');let seekArmed=false;$('episode').textContent='第二关 · '+({AB:'手机失控与奶奶拦手',C:'远控仍在继续',D:'拦人报警',E:'半小时前',F:'控制权限',G:'手机自滑'}[s.id]);v.pause();v.style.display='block';v.onloadedmetadata=()=>{if(sceneIndex!==i||token!==loadToken||phase!=='loading')return;if(s.start>0.01){seekArmed=true;v.currentTime=s.start}else{phase='video';playVideo()}};v.onseeked=()=>{if(sceneIndex!==i||token!==loadToken||phase!=='loading'||!seekArmed)return;phase='video';playVideo()};v.src=s.src;v.load();playVideo();loadingTimer=setTimeout(()=>{if(token===loadToken&&(phase==='loading'||phase==='video')&&v.currentTime<s.start+.15)showResume('视频加载较慢，点一下重试播放')},12000)}
+function beginScene(i){
+  clearTimeout(endingTimer);clearTimeout(bridgeTimer);clearTimeout(resolveTimer);
+  clearTimeout(loadingTimer);clearTimeout(slowTimer);
+  $('loadingNote').hidden=true;
+  stopEndingVoice();$('bridgeAudio').pause();$('bridge').classList.remove('on');
+  $('resolve').classList.remove('on');$('flashbackTag').classList.remove('on');
+  setInfo('','','',false);$('deviceAlert').classList.remove('on');
+  $('notice').classList.remove('on');$('off').classList.remove('on','done','is-dragging');
+  $('help').style.visibility='visible';$('endCard').style.display='none';
+  $('endActions').classList.remove('on');
+  if(i>=scenes.length){beginEnding();return}
+  sceneIndex=i;phase='loading';advancing=false;
+  const s=scenes[i],token=++loadToken,v=$('video');
+  v.classList.remove('resolve-hold');
+  v.poster=i===0?'assets/ab-opening-poster.jpg':'';
+  let seekArmed=false;
+  $('episode').textContent='第二关 · '+({AB:'手机失控与奶奶拦手',C:'远控仍在继续',D:'拦人报警',E:'半小时前',F:'控制权限',G:'手机自滑'}[s.id]);
+  v.pause();v.style.display='block';
+  v.onloadedmetadata=()=>{
+    if(sceneIndex!==i||token!==loadToken||phase!=='loading')return;
+    if(s.start>0.01){seekArmed=true;v.currentTime=s.start}
+    else{phase='video';playVideo()}
+  };
+  v.onseeked=()=>{
+    if(sceneIndex!==i||token!==loadToken||phase!=='loading'||!seekArmed)return;
+    phase='video';playVideo()
+  };
+  v.onerror=()=>{
+    if(sceneIndex===i&&token===loadToken&&['loading','video'].includes(phase))
+      showResume('视频加载失败，请点下方重试')
+  };
+  v.src=s.src;v.load();playVideo();
+  // Slow mobile downloads must keep buffering; pausing here strands WeChat users.
+  loadingTimer=setTimeout(()=>{
+    if(token===loadToken&&['loading','video'].includes(phase)&&v.currentTime<s.start+.15)
+      $('loadingNote').hidden=false
+  },3500);
+  slowTimer=setTimeout(()=>{
+    if(token===loadToken&&['loading','video'].includes(phase)&&v.currentTime<s.start+.15)
+      showResume('网络较慢，点一下重试播放')
+  },60000);
+}
 function beginBridge(){phase='bridge';$('bridge').classList.add('on');progress(31.21)}
 function beginResolve(){phase='resolve';$('video').classList.add('resolve-hold');$('flashbackTag').classList.remove('on');$('resolve').classList.add('on');setInfo('','','',false);$('deviceAlert').classList.remove('on');cap('','');progress(53.28);playEndingVoice([{file:'case-explanation'}],()=>{resolveTimer=setTimeout(beginEnding,350)})}
 function advance(){
@@ -138,9 +180,9 @@ function advance(){
   advancing=true;freezeFrame();$('video').pause();$('video').onseeked=null;cap('','');
   if(sceneIndex===1)beginInteraction();else if(sceneIndex===5)beginResolve();else beginScene(sceneIndex+1);
 }
-$('video').addEventListener('timeupdate',()=>{if(phase==='bridge'){if($('video').currentTime>=14.74-.04){sceneIndex=3;phase='video';$('bridge').classList.remove('on');$('flashbackTag').classList.add('on');$('episode').textContent='第二关 · 半小时前'}return}if(phase!=='video')return;const s=scenes[sceneIndex],t=Math.max(0,$('video').currentTime-s.start);progress(s.base+t);const cue=s.cues.find(c=>t>=c[0]&&t<c[1]);cap(cue?cue[2]:'',cue?cue[3]:'');if(s.id==='AB')setInfo('转账金额','¥4,800.00','确认转账',t>.7&&t<4.3);if(s.id==='C')setInfo('','','转账成功',t>=.5&&t<4.1);$('deviceAlert').classList.toggle('on',s.id==='C'&&t>=4.1);if($('video').currentTime>=s.end-.06)advance()});
+$('video').addEventListener('timeupdate',()=>{if(phase==='bridge'){if($('video').currentTime>=14.74-.04){sceneIndex=3;phase='video';$('bridge').classList.remove('on');$('flashbackTag').classList.add('on');$('episode').textContent='第二关 · 半小时前'}return}if(phase!=='video')return;const s=scenes[sceneIndex],t=Math.max(0,$('video').currentTime-s.start);if(t>.15){$('loadingNote').hidden=true;clearTimeout(slowTimer)}progress(s.base+t);const cue=s.cues.find(c=>t>=c[0]&&t<c[1]);cap(cue?cue[2]:'',cue?cue[3]:'');if(s.id==='AB')setInfo('转账金额','¥4,800.00','确认转账',t>.7&&t<4.3);if(s.id==='C')setInfo('','','转账成功',t>=.5&&t<4.1);$('deviceAlert').classList.toggle('on',s.id==='C'&&t>=4.1);if($('video').currentTime>=s.end-.06)advance()});
 $('video').addEventListener('ended',advance);
-function beginInteraction(){phase='interact';$('video').style.display='none';$('holdFrame').hidden=true;$('deviceAlert').classList.remove('on');$('off').classList.add('on');$('off').classList.remove('done','is-dragging');$('phone').classList.remove('dark');$('timer').textContent='按住圆点，向右滑关机。';dragX=0;$('thumb').style.left='4px';$('fill').style.width='0';$('thumb').setAttribute('aria-valuenow','0');$('episode').textContent='第二关 · 关机处置';setInfo('','','',false);cap('奶奶','快关机，先断开他的手！');progress(20.17)}
+function beginInteraction(){$('loadingNote').hidden=true;phase='interact';$('video').style.display='none';$('holdFrame').hidden=true;$('deviceAlert').classList.remove('on');$('off').classList.add('on');$('off').classList.remove('done','is-dragging');$('phone').classList.remove('dark');$('timer').textContent='按住圆点，向右滑关机。';dragX=0;$('thumb').style.left='4px';$('fill').style.width='0';$('thumb').setAttribute('aria-valuenow','0');$('episode').textContent='第二关 · 关机处置';setInfo('','','',false);cap('奶奶','快关机，先断开他的手！');progress(20.17)}
 function moveThumb(clientX){const r=$('slider').getBoundingClientRect(),max=r.width-56;dragX=Math.max(0,Math.min(max,clientX-r.left-24));$('thumb').style.left=(4+dragX)+'px';$('fill').style.width=(dragX+53)+'px';$('thumb').setAttribute('aria-valuenow',String(Math.round(dragX/max*100)));if(dragX>=max*.9)completeInteraction()}
 function completeInteraction(){if(phase!=='interact')return;phase='interact-done';$('timer').textContent='关机成功，已断开远程控制。';$('off').classList.add('done');$('phone').classList.add('dark');$('thumb').style.left='calc(100% - 52px)';$('fill').style.width='100%';cap('奶奶','手机停了。别让他跑！')}
 function continueAfterInteraction(){if(phase!=='interact-done')return;beginScene(2);$('off').classList.add('on','done');setTimeout(()=>$('off').classList.remove('on'),300)}
@@ -148,7 +190,7 @@ $('thumb').addEventListener('pointerdown',e=>{if(phase!=='interact')return;dragg
 $('thumb').addEventListener('pointermove',e=>{if(dragging&&phase==='interact')moveThumb(e.clientX)});
 $('thumb').addEventListener('pointerup',()=>{dragging=false;$('off').classList.remove('is-dragging');if(phase==='interact-done'){continueAfterInteraction();return}if(phase==='interact'){$('thumb').style.left='4px';$('fill').style.width='0';$('thumb').setAttribute('aria-valuenow','0');dragX=0}});$('thumb').addEventListener('pointercancel',()=>{dragging=false;$('off').classList.remove('is-dragging')});
 $('thumb').addEventListener('keydown',e=>{if(phase!=='interact')return;if(e.key==='ArrowRight'){e.preventDefault();const r=$('slider').getBoundingClientRect();moveThumb(r.left+24+dragX+24);if(phase==='interact-done')continueAfterInteraction()}if(e.key==='End'||e.key==='Enter'||e.key===' '){e.preventDefault();completeInteraction();continueAfterInteraction()}});
-function beginEnding(){phase='finished';sceneIndex=6;$('video').pause();$('video').style.display='none';$('resolve').classList.remove('on');$('flashbackTag').classList.remove('on');$('endCard').style.display='none';$('notice').classList.add('on');$('deviceAlert').classList.remove('on');$('episode').textContent='第二关 · 防骗提醒';cap('','');setInfo('','','',false);progress(54.18);$('endActions').classList.add('on');playEndingVoice([{file:'safety-intro'},{file:'safety-one',step:'one'},{file:'safety-two',step:'two'},{file:'safety-three',step:'three'}])}
+function beginEnding(){$('loadingNote').hidden=true;phase='finished';sceneIndex=6;$('video').pause();$('video').style.display='none';$('resolve').classList.remove('on');$('flashbackTag').classList.remove('on');$('endCard').style.display='none';$('notice').classList.add('on');$('deviceAlert').classList.remove('on');$('episode').textContent='第二关 · 防骗提醒';cap('','');setInfo('','','',false);progress(54.18);$('endActions').classList.add('on');playEndingVoice([{file:'safety-intro'},{file:'safety-one',step:'one'},{file:'safety-two',step:'two'},{file:'safety-three',step:'three'}])}
 $('startButton').onclick=()=>{voiceContext.resume().catch(()=>{});setTimeout(preloadVoices,3000);$('start').style.display='none';beginScene(0)};
 $('pause').onclick=()=>{if(phase==='video'){showResume('已暂停')}else if(phase==='paused'){$('resume').classList.remove('on');phase='video';$('pause').setAttribute('aria-label','暂停播放');playVideo()}};
 $('resumeButton').onclick=()=>{
@@ -156,7 +198,7 @@ $('resumeButton').onclick=()=>{
     const retry=voiceRetry;voiceRetry=null;voiceContext.resume().then(()=>{$('resume').classList.remove('on');retry?.()}).catch(()=>$('resumeText').textContent='旁白无法播放，请再点一次');
     return;
   }
-  $('resume').classList.remove('on');phase=$('video').readyState<1?'loading':'video';$('pause').setAttribute('aria-label','暂停播放');playVideo();
+  $('resume').classList.remove('on');phase=$('video').readyState<1?'loading':'video';$('pause').setAttribute('aria-label','暂停播放');if($('video').error)$('video').load();playVideo();
 };
 $('sound').onclick=()=>{const muted=!$('video').muted;$('video').muted=muted;voiceGain.gain.value=muted?0:1;$('sound').setAttribute('aria-pressed',String(!muted));$('sound').setAttribute('aria-label',muted?'开启声音':'关闭声音');$('sound').querySelector('svg').innerHTML=muted?'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/>':'<path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>'};
 let helpWasPlaying=false;
