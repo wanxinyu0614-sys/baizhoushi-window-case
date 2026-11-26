@@ -1,0 +1,221 @@
+/* First-level content on the exact layout and notebook CSS copied from level two. */
+.device { width: min(430px, calc((100svh - 52px) * 9 / 16)); height: auto; aspect-ratio: 9 / 16; }
+@media (max-width: 700px) {
+  .workspace { display: grid; place-items: center; }
+  .device { width: min(100vw, calc(100svh * 9 / 16)); height: auto; max-width: none; aspect-ratio: 9 / 16; }
+}
+.help-panel:not([hidden]) { display: flex; }
+.start {
+  background-color: #17251e;
+  background-image: linear-gradient(#0002, transparent 40%, #08110a9c), url('https://cdn.jsdelivr.net/gh/wanxinyu0614-sys/baizhoushi-window-case@cd38889973c65148e2753ff5ff629700222245d0/level1/play-assets/stills/opening-fast.dat');
+  background-position: center;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+}
+.start h1 { font-size: 27px; letter-spacing: 0; }
+.guide h1 { font-size: 31px; letter-spacing: .02em; }
+.media { background: #17251e; }
+.app > .media { object-fit: contain; }
+video.media { display: none; }
+#atmOverlay { position:absolute; z-index:4; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
+.info:not([hidden]) { opacity: 1; visibility: visible; pointer-events: none; }
+.info .row { display: flex; justify-content: space-between; gap: 7px; padding: 7px 0; border-top: 1px solid #dbe3e8; font-size: 13px; }
+.info .row b { font-size: 13px; }
+.info .action { margin-top: 8px; padding: 8px; border-radius: 7px; background: #1677e9; color: white; text-align: center; font-size: 12px; font-weight: 700; }
+.info .action.secondary { background: #e9f2f6; color: #254e65; }
+.info.cancelled { text-align: center; }
+.info.cancelled strong { color: #296b4b; }
+.info.note { left: 15%; width: 70%; background: #fff7de; border-color: #c3ad80; transform: rotate(-2deg); }
+.info.phone { background: #f7f8fa; }
+.time-tag { position: absolute; z-index: 9; left: 16px; top: 26px; padding: 8px 12px; border: 1px solid #e4d5aa; border-radius: 7px; background: #1b3028e8; color: #fff5d8; font-size: 14px; font-weight: 700; pointer-events: none; }
+.time-tag.bridge { top: 42%; left: 50%; width: max-content; transform: translateX(-50%); padding: 13px 18px; font-size: 25px; }
+.bridge:not([hidden]) { display:flex; }
+.bridge { position:absolute; z-index:12; inset:0; align-items:center; justify-content:center; flex-direction:column; gap:34px; padding:24px; background:linear-gradient(#0b1c17d9,#0b1c17f2); color:#fff8e6; text-align:center; }
+.bridge-questions { color:#fff9e8; font-size:18px; font-weight:700; line-height:1.75; text-shadow:0 2px 8px #0b1712; }
+.bridge-questions span { display:block; }
+.bridge-time { display:flex; align-items:center; flex-direction:column; gap:7px; }
+.bridge-time span { color:#e5d9af; font-size:14px; font-weight:700; letter-spacing:.15em; }
+.bridge-time strong { font-family:"Songti SC",serif; color:#f7cf73; font-size:43px; line-height:1.2; font-weight:800; letter-spacing:.06em; text-shadow:0 2px 12px #08130e; }
+.caption:not([hidden]) { display: block; }
+.caption[data-role="何叔"] .speaker { background: #557451; }
+.caption[data-role="官方客服"] .speaker { background: #4f78a8; }
+#resumePanel:not([hidden]) { display: flex; }
+#resumePanel .resume-panel { width: 100%; }
+.interaction { position: absolute; z-index: 10; inset: 0; padding: 0; background: #17251e; touch-action: none; }
+.interaction:not([hidden]) { display: flex; }
+.interaction canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; cursor: grab; touch-action: none; }
+.interaction canvas.dragging { cursor: grabbing; }
+.interaction canvas:focus-visible { outline: 3px solid #e4d5aa; outline-offset: -5px; }
+.interaction-gesture { position:absolute; z-index:3; top:40%; right:8%; display:flex; flex-direction:row-reverse; align-items:center; gap:4px; color:#fff7df; font-size:11px; font-weight:700; text-shadow:0 2px 6px #000; pointer-events:none; animation:interaction-gesture 1.8s ease-in-out infinite; }
+.interaction-gesture svg { width:32px; height:40px; flex:0 0 32px; filter:drop-shadow(0 3px 5px #0008); }
+.interaction-gesture span { padding:4px 7px; border-radius:7px; background:#172927db; white-space:nowrap; }
+.interaction.is-dragging .interaction-gesture,.interaction.is-moving .interaction-gesture { display:none; }
+@keyframes interaction-gesture { 0%,13%,100% {transform:translate(0,0);opacity:0} 22% {opacity:1} 72% {transform:translate(-20px,24px);opacity:1} 92% {transform:translate(-26px,30px);opacity:0} }
+.phone-step { position:absolute; z-index:7; inset:0; pointer-events:none; }
+.phone-step:not([hidden]) { display:block; }
+.phone-call-button { position:absolute; left:36%; top:47.8%; width:35%; height:5.7%; padding:0; border:0; border-radius:8px; background:transparent; cursor:pointer; pointer-events:auto; touch-action:manipulation; }
+.phone-call-button:focus-visible { outline:3px solid #ffe393; outline-offset:3px; }
+.phone-gesture { position:absolute; left:50%; top:49%; display:flex; align-items:center; pointer-events:none; animation:phone-gesture-tap 1.8s ease-in-out infinite; }
+.phone-gesture svg { width:32px; height:40px; flex:0 0 32px; filter:drop-shadow(0 3px 5px #0008); }
+.phone-hint { position:absolute; left:8%; right:8%; bottom:max(24px,calc(env(safe-area-inset-bottom) + 12px)); margin:0; padding:16px 14px 10px; border:1px solid #f6e8bd99; border-radius:10px; background:#101713f5; box-shadow:0 10px 28px #0009,0 0 0 1px #172019cc; color:#fffdf3; font-size:15px; font-weight:400; line-height:1.5; text-align:left; }
+.phone-hint-label { position:absolute; top:-12px; left:10px; min-width:44px; padding:3px 9px; border-radius:7px 7px 7px 2px; color:#fff9e7; background:#3f746c; box-shadow:0 2px 6px #0005; font-size:10px; line-height:1.35; text-align:center; letter-spacing:.04em; }
+@keyframes phone-gesture-tap { 0%,15%,100% { transform:translate(8px,-9px); opacity:.7; } 45%,70% { transform:translate(0,0); opacity:1; } }
+.notice:not([hidden]) { display: flex; }
+.notice[data-reading="1"] .letter-steps li:nth-child(1),
+.notice[data-reading="2"] .letter-steps li:nth-child(2),
+.notice[data-reading="3"] .letter-steps li:nth-child(3) { margin: 0 -8px; padding-left: 42px; padding-right: 8px; border-radius: 5px; background: #e8f0e5; color: #214b35; box-shadow: inset 3px 0 #3d7955; }
+.notice[data-reading="1"] .letter-steps li:nth-child(1)::before,
+.notice[data-reading="2"] .letter-steps li:nth-child(2)::before,
+.notice[data-reading="3"] .letter-steps li:nth-child(3)::before { left: 8px; }
+[hidden] { display: none!important; }
+
+/* Compact, high-contrast guidance beside the active hand. */
+.operation-hint {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid #c6d6c8c9;
+  border-radius: 9px;
+  background: #102c27f2;
+  box-shadow: 0 5px 14px #0008;
+  color: #fffdf3;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  pointer-events: none;
+}
+.operation-hint::before {
+  content: "操作指引";
+  flex: 0 0 auto;
+  padding: 4px 5px;
+  border-radius: 5px;
+  background: #36766c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.interaction-gesture svg,.phone-gesture svg,.gesture svg {
+  width: 28px;
+  height: 36px;
+  display: block;
+  filter: drop-shadow(0 2px 5px #000b);
+}
+@media (prefers-reduced-motion: reduce) {
+  .interaction-gesture,.phone-gesture,.gesture { animation: none !important; opacity: 1; }
+}
+.interaction .operation-hint {
+  z-index: 4;
+  top: 46%;
+  left: 74%;
+  right: 2%;
+  bottom: auto;
+  display: block;
+  color: #fffdf3;
+}
+.interaction .operation-hint::before { display: block; width: max-content; margin-bottom: 4px; }
+.interaction.is-dragging .operation-hint,.interaction.is-moving .operation-hint { display: none; }
+.interaction-gesture { top: 40%; right: 8%; }
+.phone-top-fill { position: absolute; z-index: 8; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.phone-step .phone-gesture { left: 69%; top: 48.6%; z-index: 9; }
+.phone-hint.operation-hint {
+  top: 50%;
+  left: 76%;
+  right: 2%;
+  bottom: auto;
+  display: block;
+  padding: 6px 7px;
+  color: #fffdf3;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.phone-hint.operation-hint::before { display: block; width: max-content; margin-bottom: 4px; }
+@keyframes phone-gesture-tap { 0%,15%,100% { transform: translate(1px,-5px); opacity:.75; } 45%,70% { transform: translate(-3px,0); opacity:1; } }
+
+/* Same touch hand and compact toast used by all three interactions. */
+.interaction-gesture img,.phone-gesture img {
+  display: block;
+  width: 47px;
+  height: 47px;
+  filter: drop-shadow(0 2px 3px #000a);
+}
+.interaction-gesture {
+  top: 41%;
+  left: 86.5%;
+  right: auto;
+  width: 47px;
+  height: 47px;
+  animation: touch-pulse 1.6s ease-in-out infinite;
+}
+.phone-step .phone-gesture {
+  top: 48.7%;
+  left: 65.8%;
+  width: 47px;
+  height: 47px;
+  animation: touch-pulse 1.6s ease-in-out infinite;
+}
+@keyframes touch-pulse {
+  0%,100% { transform: scale(1); opacity: .82; }
+  50% { transform: scale(.95); opacity: 1; }
+}
+.operation-hint,.interaction .operation-hint,.phone-hint.operation-hint {
+  z-index: 6;
+  display: block;
+  min-height: 0;
+  padding: 6px 9px;
+  border: 1px solid #ffffff70;
+  border-radius: 7px;
+  background: #111719ed;
+  box-shadow: 0 4px 11px #0008;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-shadow: 0 1px 2px #0009;
+}
+.interaction .operation-hint { top: 47%; left: 62%; right: 2%; bottom: auto; }
+.phone-hint.operation-hint { top: 54%; left: 72%; right: 2%; bottom: auto; }
+.interaction .operation-hint::before,.phone-hint.operation-hint::before { display: none; content: none; }
+
+/* The hand sits in front of the target; its toast reads directly below it. */
+.interaction-gesture,.phone-step .phone-gesture { z-index: 12; }
+.interaction .operation-hint { z-index: 11; top: 49%; left: 63%; right: 2%; text-align: center; }
+.phone-hint.operation-hint { z-index: 11; top: 56.5%; left: 60%; right: 3%; text-align: center; }
+
+/* Demonstrate the same path the player drags: fingertip to dashed safe area. */
+.interaction-gesture {
+  animation: arm-guide-drag 3s ease-in-out infinite;
+}
+.interaction .operation-hint {
+  animation: arm-guide-toast 3s linear infinite;
+}
+/* WeChat's viewport is taller than 9:16. Fill it instead of leaving dark bands. */
+@media (max-width: 700px) {
+  html, body, .workspace { width: 100%; height: 100dvh; min-height: 0; overflow: hidden; }
+  .workspace { display: block; padding: 0; }
+  .device { width: 100vw; max-width: none; height: 100dvh; max-height: none; aspect-ratio: auto; margin: 0; border: 0; border-radius: 0; }
+  .app > .media, #atmOverlay, .interaction canvas { object-fit: cover; }
+}
+@keyframes arm-guide-drag {
+  0% { left: 86.5%; top: 41%; opacity: 0; transform: scale(1); }
+  8%, 25% { left: 86.5%; top: 41%; opacity: 1; transform: scale(1); }
+  30% { left: 86.5%; top: 41%; opacity: 1; transform: scale(.92); }
+  72% { left: 61.4%; top: 70.1%; opacity: 1; transform: scale(.92); }
+  80% { left: 61.4%; top: 70.1%; opacity: 1; transform: scale(1); }
+  90% { left: 61.4%; top: 70.1%; opacity: 0; transform: scale(1); }
+  100% { left: 86.5%; top: 41%; opacity: 0; transform: scale(1); }
+}
+@keyframes arm-guide-toast {
+  0%, 25% { opacity: 1; }
+  32%, 85% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.loading-note { position:absolute; z-index:10; left:50%; bottom:7%; transform:translateX(-50%); width:max-content; max-width:86%; padding:9px 13px; border:1px solid #ffffff75; border-radius:8px; background:#111719ed; box-shadow:0 4px 11px #0008; color:#fff; font-size:13px; font-weight:700; pointer-events:none; }
+.loading-note[hidden] { display:none; }

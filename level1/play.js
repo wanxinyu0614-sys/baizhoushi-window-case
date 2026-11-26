@@ -1,16 +1,27 @@
 const $ = id => document.getElementById(id);
-const frame = name => `play-assets/stills/${name}${/\.(png|webp)$/.test(name) ? '' : '.webp'}${name.includes('S01-用户合成首帧-mobile') ? '?v=20261126-opening-sharp-2' : ''}`;
+let openingPosterFallback = false;
+const localOpeningPoster = 'play-assets/stills/首尾帧/S01-用户合成首帧-mobile.webp?v=20261126-opening-sharp-2';
+const frame = name => name.includes('S01-用户合成首帧-mobile')
+  ? (openingPosterFallback ? localOpeningPoster : fastAssetRoot + 'play-assets/stills/opening-fast.dat')
+  : `play-assets/stills/${name}${/\.(png|webp)$/.test(name) ? '' : '.webp'}`;
 const originalVideoFile = name => ({
   intro:'play-assets/video-composed/intro-user-1122-opening-name-fixed-mobile.mp4',
   outro:'play-assets/video-composed/outro-memory-mobile.mp4',
   phone:'play-assets/video-composed/original-app-phone-loop.mp4'
 }[name]) + '?v=20261125-mobile-2';
-const videoCdn = 'https://cdn.jsdelivr.net/gh/wanxinyu0614-sys/baizhoushi-window-case@8b5eebf57b5c19fb72853b0603db338e8fb68000/level1/play-assets/video-composed/';
-const videoFile = name => ({
-  intro: videoCdn + 'intro-user-1122-opening-name-fixed-mobile-lite.dat',
-  outro: videoCdn + 'outro-memory-mobile-lite.dat',
-  phone: originalVideoFile('phone')
+const fastAssetRoot = 'https://cdn.jsdelivr.net/gh/wanxinyu0614-sys/baizhoushi-window-case@cd38889973c65148e2753ff5ff629700222245d0/level1/';
+const videoCdn = fastAssetRoot + 'play-assets/video-composed/';
+const hevcSupported = !!document.createElement('video').canPlayType('video/mp4; codecs="hvc1"');
+const videoSources = name => ({
+  intro: [
+    ...(hevcSupported ? [videoCdn + 'intro-opening-hevc-mobile.dat'] : []),
+    videoCdn + 'intro-user-1122-opening-name-fixed-mobile-lite.dat',
+    originalVideoFile('intro')
+  ],
+  outro: [videoCdn + 'outro-memory-mobile-lite.dat', originalVideoFile('outro')],
+  phone: [originalVideoFile('phone')]
 }[name]);
+const videoFile = name => videoSources(name)[0];
 const ATM_BEFORE = '关键特写/C01-确认前-手悬停与ATM-何叔修正版';
 const ATM_AFTER = '关键特写/C01B-取消结果-ATM屏幕-何叔修正版';
 const voiceNames = ['bridge_narration','verify_official','safety_intro','tip1','tip2','tip3'];
@@ -31,7 +42,7 @@ const voiceLoads = new Map();
 // The official reply and grandma's notebook lines are one continuous track.
 // Starting it inside the button tap lets WeChat play the later reminder too.
 const officialAudio = new Audio('play-assets/audio/official-grandma-continuous.m4a?v=20261126-notice-voice-2');
-officialAudio.preload = 'auto';
+officialAudio.preload = 'none';
 function ensureVoices(names = voiceNames) {
   return Promise.all(names.map(name => {
     if (!voiceLoads.has(name)) voiceLoads.set(name,(async () => {
@@ -109,7 +120,8 @@ function seekVideo(video, seconds) {
   });
 }
 function loadVideoSource(video, name) {
-  let fallback = false;
+  const sources = videoSources(name);
+  let sourceIndex = 0;
   const ready = new Promise((resolve,reject) => {
     const clean = () => {
       video.removeEventListener('loadeddata',onLoaded);
@@ -117,9 +129,8 @@ function loadVideoSource(video, name) {
     };
     const onLoaded = () => { clean(); resolve(); };
     const onError = () => {
-      if (!fallback && name !== 'phone') {
-        fallback = true;
-        video.src = originalVideoFile(name);
+      if (++sourceIndex < sources.length) {
+        video.src = sources[sourceIndex];
         video.load();
         return;
       }
@@ -128,8 +139,8 @@ function loadVideoSource(video, name) {
     };
     video.addEventListener('loadeddata',onLoaded);
     video.addEventListener('error',onError);
-    video.src = videoFile(name);
-    video.load();
+    video.src = sources[0];
+    if (name !== 'phone') video.load();
   });
   ready.catch(() => {});
   return ready;
@@ -138,7 +149,13 @@ function ensureMedia() {
   if (mediaLoad) return mediaLoad;
   const openingPoster = '首尾帧/S01-用户合成首帧-mobile.webp';
   const img = new Image(); img.src = frame(openingPoster); stillCache.set(openingPoster,img);
-  const posterReady = img.decode().catch(() => { throw new Error(`图片加载失败：${openingPoster}`); });
+  const posterReady = img.decode().catch(() => {
+    openingPosterFallback = true;
+    img.src = localOpeningPoster;
+    $('still').src = localOpeningPoster;
+    document.querySelector('.start').style.backgroundImage = `linear-gradient(#0002, transparent 40%, #08110a9c), url('${localOpeningPoster}')`;
+    return img.decode();
+  });
   ['intro','phone'].forEach(name => {
     const video = document.createElement('video');
     video.className = 'media'; video.muted = name === 'phone' || !soundEnabled; video.playsInline = true;
@@ -175,6 +192,7 @@ function prepareOutro() {
   videoLoads.set('outro',ready);
   videoLoads.set('memory',ready);
   video.preload = 'auto';
+  setTimeout(() => officialAudio.load(),2500);
 }
 
 let runId = 0, phase = 'ready', currentSceneIndex = -1, sequenceElapsed = 0, timers = [], activeCaption = '';
@@ -208,16 +226,20 @@ function loadInteractionArt(retry = false) {
   if (!interactionArtLoad) interactionArtLoad = (async () => {
     const root = 'play-assets/interaction/三帧对位-20261123/';
     const names = {
-      raised:'02-伸手帧-ATM斜面统一.jpg',
-      lowered:'03-收手帧-ATM斜面统一.jpg'
+      raised:['arm-raised-fast.dat','02-伸手帧-ATM斜面统一.jpg'],
+      lowered:['arm-lowered-fast.dat','03-收手帧-ATM斜面统一.jpg']
     };
-    const entries = await Promise.all(Object.entries(names).map(async ([key,name]) => {
+    const entries = await Promise.all(Object.entries(names).map(async ([key,[cdnName,localName]]) => {
       const img = await new Promise((resolve,reject) => {
         const image = new Image();
         const timer = setTimeout(() => reject(new Error('互动图片加载超时')),15000);
         image.onload = () => { clearTimeout(timer); resolve(image); };
-        image.onerror = () => { clearTimeout(timer); reject(new Error('互动图片加载失败')); };
-        image.src = root+name+(retry ? `?retry=${Date.now()}` : '?v=20261126-first-load-1');
+        let local = retry;
+        image.onerror = () => {
+          if (!local) { local = true; image.src = root+localName+'?v=20261126-first-load-1'; return; }
+          clearTimeout(timer); reject(new Error('互动图片加载失败'));
+        };
+        image.src = retry ? root+localName+`?retry=${Date.now()}` : fastAssetRoot+'play-assets/interaction/'+cdnName;
       });
       return [key,img];
     }));
@@ -792,6 +814,7 @@ function restart() {
   startButton.disabled = false;
   startButton.textContent = '开始调查';
   playScene(0,runId);
+  setTimeout(() => loadInteractionArt().catch(() => {}),2500);
 }
 $('startButton').onclick = restart;
 $('replay').onclick = restart;
@@ -915,6 +938,5 @@ $('interactionCanvas').addEventListener('keydown', e => {
   if (e.key==='Escape') { e.preventDefault(); setInteractionProgress(0); }
 });
 
-// Decode all small stills and warm each video before the user reaches a cut.
+// Warm only the opening image and video before the user starts.
 ensureMedia().catch(() => {});
-loadInteractionArt().catch(() => {});
