@@ -24,7 +24,7 @@ const activeSources = new Set();
 const voiceLoads = new Map();
 // The official reply and grandma's notebook lines are one continuous track.
 // Starting it inside the button tap lets WeChat play the later reminder too.
-const officialAudio = new Audio('play-assets/audio/official-grandma-continuous.wav?v=20261126-notice-voice-1');
+const officialAudio = new Audio('play-assets/audio/official-grandma-continuous.m4a?v=20261126-notice-voice-2');
 officialAudio.preload = 'auto';
 function ensureVoices(names = voiceNames) {
   return Promise.all(names.map(name => {
